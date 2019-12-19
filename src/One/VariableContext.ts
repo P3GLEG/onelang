@@ -1,9 +1,8 @@
-import { OneAst as one } from "./Ast";
-
 export class VariableContext<T> {
     variables: { [name: string]: T } = {};
 
-    constructor(public parentContext: VariableContext<T> = null) { }
+    constructor(public parentContext: VariableContext<T> = null) {
+    }
 
     log(data: string) {
         console.log(`[VariableContext] ${data}`);
@@ -21,7 +20,7 @@ export class VariableContext<T> {
     }
 
     get(name: string): T {
-        let currContext = <VariableContext<T>> this;
+        let currContext = <VariableContext<T>>this;
         while (currContext !== null) {
             const result = currContext.variables[name];
             if (result)

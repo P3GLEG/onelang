@@ -1,13 +1,13 @@
-import { ISchemaTransform } from "./../SchemaTransformer";
-import { OneAst as one } from "./../Ast";
-import { AstVisitor } from "../AstVisitor";
-import { VariableContext } from "../VariableContext";
-import { SchemaContext } from "../SchemaContext";
+import {ISchemaTransform} from "./../SchemaTransformer";
+import {OneAst as one} from "./../Ast";
+import {AstVisitor} from "../AstVisitor";
+import {SchemaContext} from "../SchemaContext";
 
 export class Context {
     names: { [name: string]: number } = {};
 
-    constructor(public path: string[] = []) { }
+    constructor(public path: string[] = []) {
+    }
 
     subContext(name: string, unique: boolean) {
         const lastIdx = this.names[name];
@@ -18,7 +18,7 @@ export class Context {
         this.names[name] = newIdx;
 
         const newName = unique ? name : `${name}(${newIdx})`;
-        
+
         return new Context([...this.path, newName]);
     }
 }
@@ -27,10 +27,14 @@ export class FillMetaPathTransform extends AstVisitor<Context> implements ISchem
     name = "fillMetaPath";
     dependencies = ["fillName"];
 
+    transform(schemaCtx: SchemaContext) {
+        this.visitSchema(schemaCtx.schema, new Context());
+    }
+
     protected subContext(oldContext: Context, item: one.NamedItem, name?: string) {
         const unique = !name;
         const newContext = oldContext.subContext(unique ? item.name : name, unique);
-        
+
         if (!unique)
             item.name = newContext.path.last();
         item.metaPath = newContext.path.join("/");
@@ -62,19 +66,15 @@ export class FillMetaPathTransform extends AstVisitor<Context> implements ISchem
         super.visitForeachStatement(stmt, this.subContext(context, stmt, "foreach"));
     }
 
-    protected visitMethodLike(method: one.Method|one.Constructor, context: Context) {
+    protected visitMethodLike(method: one.Method | one.Constructor, context: Context) {
         super.visitMethodLike(method, this.subContext(context, method));
     }
 
     protected visitClass(cls: one.Class, context: Context) {
         super.visitClass(cls, this.subContext(context, cls));
     }
-    
+
     protected visitInterface(intf: one.Interface, context: Context) {
         super.visitInterface(intf, this.subContext(context, intf));
-    }
-    
-    transform(schemaCtx: SchemaContext) {
-        this.visitSchema(schemaCtx.schema, new Context());
     }
 }

@@ -1,5 +1,5 @@
-import { LangFileSchema } from "./LangFileSchema";
-import { deindent } from "./Utils";
+import {LangFileSchema} from "./LangFileSchema";
+import {deindent} from "../Utils/Helpers";
 
 export interface LangConfig {
     name?: string;

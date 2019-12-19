@@ -1,11 +1,10 @@
-import * as one from "../StdLib/one";
-import { OneAst as ast } from "../One/Ast";
-import { Reader } from "./Common/Reader";
-import { ExpressionParser } from "./Common/ExpressionParser";
-import { NodeManager } from "./Common/NodeManager";
-import { IParser } from "./Common/IParser";
+import {OneAst as ast} from "../One/Ast";
+import {Reader} from "./Common/Reader";
+import {ExpressionParser} from "./Common/ExpressionParser";
+import {NodeManager} from "./Common/NodeManager";
+import {IParser} from "./Common/IParser";
 
-export class TypeScriptParser2 implements IParser {
+export class TypeScriptParser implements IParser {
     langData: ast.ILangData = {
         langId: "typescript",
         literalClassNames: {
@@ -40,6 +39,10 @@ export class TypeScriptParser2 implements IParser {
         this.expressionParser = this.createExpressionParser(this.reader, this.nodeManager);
     }
 
+    static parseFile(source: string) {
+        return new TypeScriptParser(source).parse();
+    }
+
     createExpressionParser(reader: Reader, nodeManager: NodeManager = null) {
         const expressionParser = new ExpressionParser(reader, nodeManager);
         expressionParser.unaryPrehook = () => this.parseExpressionToken();
@@ -67,13 +70,13 @@ export class TypeScriptParser2 implements IParser {
                 do {
                     const generics = this.parseType();
                     type.typeArguments.push(generics);
-                } while(this.reader.readToken(","));
+                } while (this.reader.readToken(","));
                 this.reader.expectToken(">");
             }
         }
 
         this.nodeManager.addNode(type, startPos);
-        
+
         while (this.reader.readToken("[]")) {
             type = ast.Type.Class("TsArray", [type]);
             this.nodeManager.addNode(type, startPos);
@@ -88,22 +91,22 @@ export class TypeScriptParser2 implements IParser {
 
     parseExpressionToken(): ast.Expression {
         if (this.reader.readToken("null")) {
-            return <ast.Literal> { exprKind: "Literal", literalType: "null", value: "null" };
+            return <ast.Literal>{exprKind: "Literal", literalType: "null", value: "null"};
         } else if (this.reader.readToken("true")) {
-            return <ast.Literal> { exprKind: "Literal", literalType: "boolean", value: true };
+            return <ast.Literal>{exprKind: "Literal", literalType: "boolean", value: true};
         } else if (this.reader.readToken("false")) {
-            return <ast.Literal> { exprKind: "Literal", literalType: "boolean", value: false };
+            return <ast.Literal>{exprKind: "Literal", literalType: "boolean", value: false};
         } else if (this.reader.readToken("`")) {
-            const tmplStr = <ast.TemplateString> { exprKind: ast.ExpressionKind.TemplateString, parts: [] };
+            const tmplStr = <ast.TemplateString>{exprKind: ast.ExpressionKind.TemplateString, parts: []};
             while (true) {
                 const litMatch = this.reader.readRegex("([^$`]|\\$[^{]|\\\\${|\\\\`)*");
-                tmplStr.parts.push(<ast.TemplateStringPart> { literal: true, text: litMatch[0] });
+                tmplStr.parts.push(<ast.TemplateStringPart>{literal: true, text: litMatch[0]});
                 if (this.reader.readToken("`"))
                     break;
                 else {
                     this.reader.expectToken("${");
                     const expr = this.parseExpression();
-                    tmplStr.parts.push(<ast.TemplateStringPart> { literal: false, expr });
+                    tmplStr.parts.push(<ast.TemplateStringPart>{literal: false, expr});
                     this.reader.expectToken("}");
                 }
             }
@@ -114,14 +117,14 @@ export class TypeScriptParser2 implements IParser {
             const args = this.expressionParser.parseCallArguments();
 
             // TODO: shouldn't we use just one `type` field instead of `cls` and `typeArguments`?
-            return <ast.NewExpression> {
+            return <ast.NewExpression>{
                 exprKind: ast.ExpressionKind.New,
-                cls: <ast.Identifier> { exprKind: ast.ExpressionKind.Identifier, text: type.className },
+                cls: <ast.Identifier>{exprKind: ast.ExpressionKind.Identifier, text: type.className},
                 typeArguments: type.typeArguments,
                 arguments: args
             };
         } else if (this.reader.readToken("<")) {
-            const castExpr = <ast.CastExpression> { exprKind: ast.ExpressionKind.Cast };
+            const castExpr = <ast.CastExpression>{exprKind: ast.ExpressionKind.Cast};
             castExpr.newType = this.parseType();
             this.reader.expectToken(">");
             castExpr.expression = this.parseExpression();
@@ -156,7 +159,7 @@ export class TypeScriptParser2 implements IParser {
         if (stmt === null)
             this.reader.fail("expected block or statement");
 
-        return <ast.Block> { statements: [stmt] };
+        return <ast.Block>{statements: [stmt]};
     }
 
     parseStatement() {
@@ -168,15 +171,15 @@ export class TypeScriptParser2 implements IParser {
         let requiresClosing = true;
         const varDeclMatches = this.reader.readRegex("(const|let|var)\\b");
         if (varDeclMatches !== null) {
-            const varDecl = statement = <ast.VariableDeclaration> { stmtType: ast.StatementType.VariableDeclaration };
+            const varDecl = statement = <ast.VariableDeclaration>{stmtType: ast.StatementType.VariableDeclaration};
             varDecl.name = this.reader.expectIdentifier("expected variable name");
             this.parseVarDeclTypeAndInit(varDecl);
         } else if (this.reader.readToken("delete")) {
-            const unsetStmt = statement = <ast.UnsetStatement> { stmtType: ast.StatementType.Unset };
+            const unsetStmt = statement = <ast.UnsetStatement>{stmtType: ast.StatementType.Unset};
             unsetStmt.expression = this.parseExpression();
         } else if (this.reader.readToken("if")) {
             requiresClosing = false;
-            const ifStmt = statement = <ast.IfStatement> { stmtType: ast.StatementType.If };
+            const ifStmt = statement = <ast.IfStatement>{stmtType: ast.StatementType.If};
             this.reader.expectToken("(");
             ifStmt.condition = this.parseExpression();
             this.reader.expectToken(")");
@@ -185,7 +188,7 @@ export class TypeScriptParser2 implements IParser {
                 ifStmt.else = this.parseBlockOrStatement();
         } else if (this.reader.readToken("while")) {
             requiresClosing = false;
-            const whileStmt = statement = <ast.WhileStatement> { stmtType: ast.StatementType.While };
+            const whileStmt = statement = <ast.WhileStatement>{stmtType: ast.StatementType.While};
             this.reader.expectToken("(");
             whileStmt.condition = this.parseExpression();
             this.reader.expectToken(")");
@@ -196,17 +199,17 @@ export class TypeScriptParser2 implements IParser {
             const varDeclMod = this.reader.readAnyOf(["const", "let", "var"]);
             const itemVarName = this.reader.expectIdentifier();
             if (this.reader.readToken("of") || this.reader.readToken("in")) {
-                const foreachStmt = statement = <ast.ForeachStatement> { 
+                const foreachStmt = statement = <ast.ForeachStatement>{
                     stmtType: ast.StatementType.Foreach,
-                    itemVariable: <ast.VariableBase> { name: itemVarName }
+                    itemVariable: <ast.VariableBase>{name: itemVarName}
                 };
                 foreachStmt.items = this.parseExpression();
                 this.reader.expectToken(")");
                 foreachStmt.body = this.parseBlockOrStatement();
             } else {
-                const forStmt = statement = <ast.ForStatement> {
+                const forStmt = statement = <ast.ForStatement>{
                     stmtType: ast.StatementType.For,
-                    itemVariable: <ast.VariableDeclaration> { name: itemVarName }
+                    itemVariable: <ast.VariableDeclaration>{name: itemVarName}
                 };
                 this.parseVarDeclTypeAndInit(forStmt.itemVariable);
                 this.reader.expectToken(";");
@@ -217,19 +220,19 @@ export class TypeScriptParser2 implements IParser {
                 forStmt.body = this.parseBlockOrStatement();
             }
         } else if (this.reader.readToken("return")) {
-            const returnStmt = statement = <ast.ReturnStatement> { stmtType: ast.StatementType.Return };
+            const returnStmt = statement = <ast.ReturnStatement>{stmtType: ast.StatementType.Return};
             returnStmt.expression = this.reader.peekToken(";") ? null : this.parseExpression();
         } else if (this.reader.readToken("throw")) {
-            const throwStmt = statement = <ast.ThrowStatement> { stmtType: ast.StatementType.Throw };
+            const throwStmt = statement = <ast.ThrowStatement>{stmtType: ast.StatementType.Throw};
             throwStmt.expression = this.parseExpression();
         } else if (this.reader.readToken("break")) {
-            statement = <ast.Statement> { stmtType: ast.StatementType.Break };
+            statement = <ast.Statement>{stmtType: ast.StatementType.Break};
         } else {
             const expr = this.parseExpression();
-            statement = <ast.ExpressionStatement> { stmtType: ast.StatementType.ExpressionStatement, expression: expr };
+            statement = <ast.ExpressionStatement>{stmtType: ast.StatementType.ExpressionStatement, expression: expr};
             if (!(expr.exprKind === ast.ExpressionKind.Call ||
-                (expr.exprKind === ast.ExpressionKind.Binary && ["=", "+=", "-="].includes((<ast.BinaryExpression> expr).operator)) ||
-                (expr.exprKind === ast.ExpressionKind.Unary && ["++", "--"].includes((<ast.UnaryExpression> expr).operator))))
+                (expr.exprKind === ast.ExpressionKind.Binary && ["=", "+=", "-="].includes((<ast.BinaryExpression>expr).operator)) ||
+                (expr.exprKind === ast.ExpressionKind.Unary && ["++", "--"].includes((<ast.UnaryExpression>expr).operator))))
                 this.reader.fail("this expression is not allowed as statement");
         }
 
@@ -250,13 +253,13 @@ export class TypeScriptParser2 implements IParser {
         if (!this.reader.readToken("{")) return null;
         const startPos = this.reader.prevTokenOffset;
 
-        const block = <ast.Block> { statements: [] };
+        const block = <ast.Block>{statements: []};
         if (this.reader.readToken("}")) return block;
 
         do {
             const statement = this.parseStatement();
             block.statements.push(statement);
-        } while(!this.reader.readToken("}"));
+        } while (!this.reader.readToken("}"));
 
         this.nodeManager.addNode(block, startPos);
         return block;
@@ -268,7 +271,7 @@ export class TypeScriptParser2 implements IParser {
             do {
                 const generics = this.reader.expectIdentifier();
                 typeArguments.push(generics);
-            } while(this.reader.readToken(","));
+            } while (this.reader.readToken(","));
             this.reader.expectToken(">");
         }
         return typeArguments;
@@ -276,7 +279,7 @@ export class TypeScriptParser2 implements IParser {
 
     parseExprStmtFromString(expression: string) {
         const expr = this.createExpressionParser(new Reader(expression)).parse();
-        return <ast.ExpressionStatement> { stmtType: ast.StatementType.ExpressionStatement, expression: expr };
+        return <ast.ExpressionStatement>{stmtType: ast.StatementType.ExpressionStatement, expression: expr};
     }
 
     parseMethodSignature(method: ast.Method, cls: ast.Class, isConstructor: boolean, declarationOnly: boolean) {
@@ -285,7 +288,7 @@ export class TypeScriptParser2 implements IParser {
         const bodyPrefixStatements: ast.Statement[] = [];
         if (!this.reader.readToken(")")) {
             do {
-                const param = <ast.MethodParameter> {};
+                const param = <ast.MethodParameter>{};
                 method.parameters.push(param);
 
                 this.reader.skipWhitespace();
@@ -299,7 +302,7 @@ export class TypeScriptParser2 implements IParser {
                 this.parseVarDeclTypeAndInit(param);
 
                 if (isPublic) {
-                    const field = <ast.Field> { name: param.name, type: param.type, initializer: param.initializer };
+                    const field = <ast.Field>{name: param.name, type: param.type, initializer: param.initializer};
                     cls.fields[field.name] = field;
                     bodyPrefixStatements.push(this.parseExprStmtFromString(`this.${param.name} = ${param.name}`));
                 }
@@ -329,7 +332,7 @@ export class TypeScriptParser2 implements IParser {
         if (!this.reader.readToken("interface")) return null;
         const intfStart = this.reader.prevTokenOffset;
 
-        const intf = <ast.Interface> { methods: {}, baseInterfaces: [] };
+        const intf = <ast.Interface>{methods: {}, baseInterfaces: []};
         intf.name = this.reader.expectIdentifier("expected identifier after 'interface' keyword");
         this.context.push(`I:${intf.name}`);
 
@@ -339,7 +342,7 @@ export class TypeScriptParser2 implements IParser {
             intf.baseInterfaces.push(this.reader.expectIdentifier());
 
         this.reader.expectToken("{");
-        while(!this.reader.readToken("}")) {
+        while (!this.reader.readToken("}")) {
             const leadingTrivia = this.reader.readLeadingTrivia();
 
             const memberStart = this.reader.offset;
@@ -347,7 +350,12 @@ export class TypeScriptParser2 implements IParser {
             const methodTypeArguments = this.parseTypeArguments();
             this.reader.expectToken("("); // method
 
-            const method = <ast.Method> { name: memberName, leadingTrivia, parameters: [], typeArguments: methodTypeArguments };
+            const method = <ast.Method>{
+                name: memberName,
+                leadingTrivia,
+                parameters: [],
+                typeArguments: methodTypeArguments
+            };
             intf.methods[method.name] = method;
 
             this.parseMethodSignature(method, null, /* isConstructor = */ false, /* declarationOnly = */ true);
@@ -356,7 +364,7 @@ export class TypeScriptParser2 implements IParser {
 
         this.nodeManager.addNode(intf, intfStart);
         this.context.pop();
-        return intf;        
+        return intf;
     }
 
     parseClass() {
@@ -364,8 +372,8 @@ export class TypeScriptParser2 implements IParser {
         const declarationOnly = clsModifiers.includes("declare");
         if (!this.reader.readToken("class")) return null;
         const clsStart = this.reader.prevTokenOffset;
-        
-        const cls = <ast.Class> { methods: {}, fields: {}, properties: {}, constructor: null, baseInterfaces: [] };
+
+        const cls = <ast.Class>{methods: {}, fields: {}, properties: {}, constructor: null, baseInterfaces: []};
         cls.name = this.reader.expectIdentifier("expected identifier after 'class' keyword");
         this.context.push(`C:${cls.name}`);
 
@@ -378,7 +386,7 @@ export class TypeScriptParser2 implements IParser {
             cls.baseInterfaces.push(this.reader.expectIdentifier());
 
         this.reader.expectToken("{");
-        while(!this.reader.readToken("}")) {
+        while (!this.reader.readToken("}")) {
             const leadingTrivia = this.reader.readLeadingTrivia();
 
             const memberStart = this.reader.offset;
@@ -390,7 +398,14 @@ export class TypeScriptParser2 implements IParser {
             const memberName = this.reader.expectIdentifier();
             const methodTypeArguments = this.parseTypeArguments();
             if (this.reader.readToken("(")) { // method
-                const method = <ast.Method> { name: memberName, static: isStatic, visibility, leadingTrivia, parameters: [], typeArguments: methodTypeArguments };
+                const method = <ast.Method>{
+                    name: memberName,
+                    static: isStatic,
+                    visibility,
+                    leadingTrivia,
+                    parameters: [],
+                    typeArguments: methodTypeArguments
+                };
                 const isConstructor = memberName === "constructor";
                 if (isConstructor)
                     cls.constructor = method;
@@ -401,7 +416,7 @@ export class TypeScriptParser2 implements IParser {
                 this.nodeManager.addNode(method, memberStart);
             } else if (memberName === "get" || memberName === "set") { // property
                 const propName = this.reader.expectIdentifier();
-                const prop = cls.properties[propName] || (cls.properties[propName] = <ast.Property> { name: propName });
+                const prop = cls.properties[propName] || (cls.properties[propName] = <ast.Property>{name: propName});
                 if (memberName === "get") {
                     this.context.push(`P[G]:${prop.name}`);
                     this.reader.expectToken("()", "expected '()' after property getter name");
@@ -421,7 +436,7 @@ export class TypeScriptParser2 implements IParser {
                 this.nodeManager.addNode(prop, memberStart);
                 this.context.pop();
             } else {
-                const field = <ast.Field> { name: memberName, static: isStatic, visibility, leadingTrivia };
+                const field = <ast.Field>{name: memberName, static: isStatic, visibility, leadingTrivia};
                 cls.fields[field.name] = field;
                 this.context.push(`F:${field.name}`);
 
@@ -442,7 +457,7 @@ export class TypeScriptParser2 implements IParser {
         if (!this.reader.readToken("enum")) return null;
         const enumStart = this.reader.prevTokenOffset;
 
-        const enumObj = <ast.Enum> { values: [] };
+        const enumObj = <ast.Enum>{values: []};
         enumObj.name = this.reader.expectIdentifier("expected identifier after 'enum' keyword");
         this.context.push(`E:${enumObj.name}`);
 
@@ -452,13 +467,13 @@ export class TypeScriptParser2 implements IParser {
                 if (this.reader.peekToken("}")) break; // eg. "enum { A, B, }" (but multiline)
 
                 const enumMemberName = this.reader.expectIdentifier();
-                const enumMember = <ast.EnumMember> { name: enumMemberName };
+                const enumMember = <ast.EnumMember>{name: enumMemberName};
                 this.nodeManager.addNode(enumMember, this.reader.prevTokenOffset);
                 enumObj.values.push(enumMember);
 
                 // TODO: generated code compatibility
                 this.reader.readToken(`= "${enumMemberName}"`);
-            } while(this.reader.readToken(","));
+            } while (this.reader.readToken(","));
             this.reader.expectToken("}");
         }
 
@@ -468,7 +483,14 @@ export class TypeScriptParser2 implements IParser {
     }
 
     parseSchema() {
-        const schema = <ast.Schema> { classes: {}, enums: {}, globals: {}, interfaces: {}, langData: this.langData, mainBlock: { statements: [] } };
+        const schema = <ast.Schema>{
+            classes: {},
+            enums: {},
+            globals: {},
+            interfaces: {},
+            langData: this.langData,
+            mainBlock: {statements: []}
+        };
         while (true) {
             const leadingTrivia = this.reader.readLeadingTrivia();
             if (this.reader.eof) break;
@@ -479,7 +501,7 @@ export class TypeScriptParser2 implements IParser {
             if (cls !== null) {
                 cls.leadingTrivia = leadingTrivia;
                 schema.classes[cls.name] = cls;
-                continue;                
+                continue;
             }
 
             const enumObj = this.parseEnum();
@@ -512,15 +534,11 @@ export class TypeScriptParser2 implements IParser {
             stmt.leadingTrivia = leadingTrivia;
             schema.mainBlock.statements.push(stmt);
         }
-        
+
         return schema;
     }
 
     parse() {
         return this.parseSchema();
-    }
-
-    static parseFile(source: string) {
-        return new TypeScriptParser2(source).parse();
     }
 }

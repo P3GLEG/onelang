@@ -1,14 +1,18 @@
-import { ISchemaTransform } from "./../SchemaTransformer";
-import { OneAst as one } from "./../Ast";
-import { SchemaContext } from "../SchemaContext";
-import { AstVisitor } from "../AstVisitor";
+import {ISchemaTransform} from "./../SchemaTransformer";
+import {OneAst as one} from "./../Ast";
+import {SchemaContext} from "../SchemaContext";
+import {AstVisitor} from "../AstVisitor";
 
 export class TriviaCommentTransform extends AstVisitor<void> implements ISchemaTransform {
     name = "triviaComment";
 
+    transform(schemaCtx: SchemaContext) {
+        this.visitSchema(schemaCtx.schema, null);
+    }
+
     protected visitStatement(stmt: one.Statement) {
         const lines = (stmt.leadingTrivia || "").split("\n");
-        
+
         let newLines = [];
         let inComment = false;
         for (let line of lines) {
@@ -30,7 +34,7 @@ export class TriviaCommentTransform extends AstVisitor<void> implements ISchemaT
                     // do not convert "*/" to "#" (skip line)
                     if (!(closesComment && line === ""))
                         newLines.push("#" + line.replace(/^  /, ""));
-                    
+
                     if (closesComment)
                         inComment = false;
                 } else {
@@ -40,9 +44,5 @@ export class TriviaCommentTransform extends AstVisitor<void> implements ISchemaT
         }
 
         stmt.leadingTrivia2 = newLines.join("\n");
-    }
-
-    transform(schemaCtx: SchemaContext) {
-        this.visitSchema(schemaCtx.schema, null);
     }
 }

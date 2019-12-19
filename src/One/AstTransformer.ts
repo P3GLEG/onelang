@@ -1,10 +1,14 @@
-import { OneAst as one } from "./Ast";
-import { AstVisitor } from "./AstVisitor";
+import {OneAst as one} from "./Ast";
+import {AstVisitor} from "./AstVisitor";
 
 export class AstTransformer<T> extends AstVisitor<T> {
     schema: one.Schema;
     currentClass: one.Class;
     currentMethod: one.Method;
+
+    process(schema: one.Schema) {
+        this.visitSchema(schema, null);
+    }
 
     protected visitMethod(method: one.Method, context: T) {
         this.currentMethod = method;
@@ -22,9 +26,5 @@ export class AstTransformer<T> extends AstVisitor<T> {
         this.schema = schema;
         super.visitSchema(schema, context);
         this.schema = null;
-    }
-
-    process(schema: one.Schema) {
-        this.visitSchema(schema, null);
     }
 }

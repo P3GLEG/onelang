@@ -1,5 +1,5 @@
-import { OneAst as one } from "../Ast";
-import { AstTransformer } from "../AstTransformer";
+import {OneAst as one} from "../Ast";
+import {AstTransformer} from "../AstTransformer";
 
 export class ExtractCommentAttributes extends AstTransformer<void> {
     processTrivia(trivia: string) {
@@ -12,7 +12,7 @@ export class ExtractCommentAttributes extends AstTransformer<void> {
         return result;
     }
 
-    protected visitMethodLike(method: one.Method|one.Constructor) {
+    protected visitMethodLike(method: one.Method | one.Constructor) {
         method.attributes = this.processTrivia(method.leadingTrivia);
         super.visitMethodLike(method, null);
     }
@@ -21,7 +21,7 @@ export class ExtractCommentAttributes extends AstTransformer<void> {
         cls.attributes = this.processTrivia(cls.leadingTrivia);
         super.visitClass(cls, null);
     }
-    
+
     protected visitInterface(intf: one.Interface) {
         intf.attributes = this.processTrivia(intf.leadingTrivia);
         super.visitInterface(intf, null);

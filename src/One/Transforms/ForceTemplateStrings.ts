@@ -1,15 +1,18 @@
-import { ISchemaTransform } from "./../SchemaTransformer";
-import { OneAst as one } from "./../Ast";
-import { SchemaContext } from "../SchemaContext";
-import { AstVisitor } from "../AstVisitor";
-import { AstHelper } from "../AstHelper";
+import {OneAst as one} from "./../Ast";
+import {SchemaContext} from "../SchemaContext";
+import {AstVisitor} from "../AstVisitor";
+import {AstHelper} from "../AstHelper";
 
 export class ForceTemplateStrings extends AstVisitor<void> {
+    transform(schemaCtx: SchemaContext) {
+        this.visitSchema(schemaCtx.schema, null);
+    }
+
     protected infixCollect(expr: one.BinaryExpression, result: one.Expression[]) {
         if (expr.operator === "+") {
             for (const child of [expr.left, expr.right]) {
                 if (child.exprKind === "Binary") {
-                    this.infixCollect(<one.BinaryExpression> child, result);
+                    this.infixCollect(<one.BinaryExpression>child, result);
                 } else {
                     result.push(child);
                 }
@@ -26,19 +29,15 @@ export class ForceTemplateStrings extends AstVisitor<void> {
 
             const parts = exprList.map(x => {
                 if (x.exprKind === "Literal" && (<one.Literal>x).literalType === "string")
-                    return <one.TemplateStringPart> { literal: true, text: (<one.Literal>x).value };
+                    return <one.TemplateStringPart>{literal: true, text: (<one.Literal>x).value};
                 else
-                    return <one.TemplateStringPart> { literal: false, expr: x };
+                    return <one.TemplateStringPart>{literal: false, expr: x};
             });
-            const tmplStr = <one.TemplateString> { exprKind: "TemplateString", parts };
+            const tmplStr = <one.TemplateString>{exprKind: "TemplateString", parts};
 
             AstHelper.replaceProperties(expr, tmplStr);
         } else {
             super.visitBinaryExpression(expr, null);
         }
-    }
-
-    transform(schemaCtx: SchemaContext) {
-        this.visitSchema(schemaCtx.schema, null);
     }
 }

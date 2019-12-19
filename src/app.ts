@@ -1,11 +1,10 @@
 require("./Utils/Extensions.js");
-import { writeFile, readFile, timeNow } from "./Utils/NodeUtils";
-import { OneCompiler } from "./OneCompiler";
-import { langConfigs} from "./Generator/LangConfigs";
-const fs = require("fs");
-global["YAML"] = require('yamljs'); 
+import {readFile, timeNow} from "./Utils/NodeUtils";
+import {OneCompiler} from "./One/OneCompiler";
+import {langConfigs} from "./Generator/LangConfigs";
 
-global["debugOn"] = false;
+const fs = require("fs");
+
 
 let prgNames = ["all"];
 const langFilter = "";
@@ -27,20 +26,17 @@ for (const langConfig of langConfigVals) {
     langConfig.schema = OneCompiler.parseLangSchema(langYaml, compiler.stdlibCtx.schema);
 }
 
-    const programCode = readFile(`input/Pegleg.ts`).replace(/\r\n/g, '\n');
-    let t0 = timeNow();
-    compiler.parse("typescript", programCode);
-    
-    const compileTimes = [];
-    for (const lang of langConfigVals) {
-        if (langFilter && lang.name !== langFilter) continue;
-        const ts = [];
-        t0 = timeNow();
-        const codeGen = compiler.getCodeGenerator(lang.schema);
-        lang.request.code = codeGen.generate(true);
-        compileTimes.push(timeNow() - t0);
-        console.log(codeGen.generatedCode);
+const programCode = readFile(`input/Pegleg.ts`).replace(/\r\n/g, '\n');
+let t0 = timeNow();
+compiler.parse("typescript", programCode);
 
-    
+const compileTimes = [];
+for (const lang of langConfigVals) {
+    if (langFilter && lang.name !== langFilter) continue;
+    t0 = timeNow();
+    const codeGen = compiler.getCodeGenerator(lang.schema);
+    lang.request.code = codeGen.generate(true);
+    compileTimes.push(timeNow() - t0);
+    console.log(codeGen.generatedCode);
 }
 

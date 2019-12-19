@@ -1,5 +1,5 @@
-import { TemplateAst as Ast } from "./TemplateAst";
-import { ExprLangAstPrinter } from "../ExprLang/ExprLangAstPrinter";
+import {TemplateAst as Ast} from "./TemplateAst";
+import {ExprLangAstPrinter} from "../ExprLang/ExprLangAstPrinter";
 
 // Node types: Block, Line, ForNode, IfNode, TextNode, TemplateNode
 // Block: BlockItem[]
@@ -26,7 +26,7 @@ export class TemplateAstPrinter {
         } else if (node instanceof Ast.Line) {
             for (let iItem = 0; iItem < node.items.length; iItem++) {
                 const item = node.items[iItem];
-                
+
                 let inlineValue = null;
                 if (item instanceof Ast.TextNode) {
                     inlineValue = `"${item.value.replace(/\n/g, "\\n")}"`;
@@ -35,7 +35,7 @@ export class TemplateAstPrinter {
                     inlineValue = `"${exprText}"`;
                 }
 
-                this.addLine(`Item #${iItem + 1}: ${inlineValue||""}`);
+                this.addLine(`Item #${iItem + 1}: ${inlineValue || ""}`);
                 if (!inlineValue)
                     this.processNode(item);
             }

@@ -1,9 +1,9 @@
-import { ExprLangAst as ExprAst } from "../ExprLang/ExprLangAst";
-import { ExprLangParser } from "../ExprLang/ExprLangParser";
-import { ExprLangVM, IMethodHandler, VariableContext, VariableSource } from "../ExprLang/ExprLangVM";
-import { TemplateAst as Ast } from "./TemplateAst";
-import { TemplateParser } from "./TemplateParser";
-import { OneAst as one } from "../../One/Ast";
+import {ExprLangAst as ExprAst} from "../ExprLang/ExprLangAst";
+import {ExprLangParser} from "../ExprLang/ExprLangParser";
+import {ExprLangVM, IMethodHandler, VariableContext, VariableSource} from "../ExprLang/ExprLangVM";
+import {TemplateAst as Ast} from "./TemplateAst";
+import {TemplateParser} from "./TemplateParser";
+import {OneAst as one} from "../../One/Ast";
 
 /**
  * Some important notes:
@@ -12,7 +12,7 @@ import { OneAst as one } from "../../One/Ast";
  *    because those are not always generate _any_ result (not even a newline), eg:
  *      - for: no items and {{else}} is not specified
  *      - if: condition is not true and {{else}} is not specified
- *    so we have to add that '\n' here in the generator based on runtime data 
+ *    so we have to add that '\n' here in the generator based on runtime data
  *    (but only if it's not an inline construct & it's not the last node -> no trailing '\n' is allowed)
  *  - empty string ("") and <null> are different: <null> is created when an if or for does not match any item
  *    <null> does not generate code, not counts as a valid item in for (so no separator included)
@@ -27,14 +27,14 @@ export class TemplateMethod {
     }
 
     static fromSignature(signature: string, template: string) {
-        const signatureAst = ExprLangParser.parse(signature);        
+        const signatureAst = ExprLangParser.parse(signature);
         if (signatureAst.kind === "call") {
-            const callExpr = <ExprAst.CallExpression> signatureAst;
-            const name = (<ExprAst.IdentifierExpression> callExpr.method).text;
-            const args = callExpr.arguments.map(x => (<ExprAst.IdentifierExpression> x).text);
+            const callExpr = <ExprAst.CallExpression>signatureAst;
+            const name = (<ExprAst.IdentifierExpression>callExpr.method).text;
+            const args = callExpr.arguments.map(x => (<ExprAst.IdentifierExpression>x).text);
             return new TemplateMethod(name, args, template);
         } else if (signatureAst.kind === "identifier") {
-            const idExpr = <ExprAst.IdentifierExpression> signatureAst;
+            const idExpr = <ExprAst.IdentifierExpression>signatureAst;
             const name = idExpr.text;
             return new TemplateMethod(name, [], template);
         } else {
@@ -44,12 +44,15 @@ export class TemplateMethod {
 }
 
 export class CallStackItem {
-    constructor(public methodName: string, public vars: VariableContext) { }
+    constructor(public methodName: string, public vars: VariableContext) {
+    }
 }
 
 export class GeneratedNode {
     astNode: one.INode;
-    constructor(public text: string) { }
+
+    constructor(public text: string) {
+    }
 }
 
 export class TemplateGenerator implements IMethodHandler {
@@ -62,37 +65,6 @@ export class TemplateGenerator implements IMethodHandler {
     constructor(variables: VariableContext) {
         this.vm.methodHandler = this;
         this.rootVars = variables.inherit(this.methods);
-    }
-
-    addMethod(method: TemplateMethod) {
-        this.methods.addCallback(method.name, () => method);
-    }
-
-    call(method: any, args: any[], thisObj: any, vars: VariableContext): GeneratedNode[] {
-        let result: GeneratedNode[];
-        this.callStack.push(new CallStackItem(<string> method.name, vars));
-        
-        if (method instanceof TemplateMethod) {
-            //if (args.length !== method.args.length)
-            //    throw new Error(`Method '${method.name}' called with ${args.length} arguments, but expected ${method.args.length}`);
-            
-            const varSource = new VariableSource(`method: ${method.name}`);
-            for (let i = 0; i < args.length; i++)
-                varSource.setVariable(method.args[i], args[i]);
-
-            result = this.generateNode(method.body, vars.inherit(varSource));
-        } else if (typeof method === "function") {
-            result = method.apply(thisObj, args);
-        } else {
-            throw new Error(`Expected TemplateMethod or function, but got ${method}`);
-        }
-
-        this.callStack.pop();
-        return result;
-    }
-
-    isSimpleTextNode(node: Ast.BlockItem) {
-        return node instanceof Ast.Line && node.items[0] instanceof Ast.TextNode;
     }
 
     static join(items: GeneratedNode[], separator: string) {
@@ -113,6 +85,37 @@ export class TemplateGenerator implements IMethodHandler {
             result.push(...line);
         }
         return result;
+    }
+
+    addMethod(method: TemplateMethod) {
+        this.methods.addCallback(method.name, () => method);
+    }
+
+    call(method: any, args: any[], thisObj: any, vars: VariableContext): GeneratedNode[] {
+        let result: GeneratedNode[];
+        this.callStack.push(new CallStackItem(<string>method.name, vars));
+
+        if (method instanceof TemplateMethod) {
+            //if (args.length !== method.args.length)
+            //    throw new Error(`Method '${method.name}' called with ${args.length} arguments, but expected ${method.args.length}`);
+
+            const varSource = new VariableSource(`method: ${method.name}`);
+            for (let i = 0; i < args.length; i++)
+                varSource.setVariable(method.args[i], args[i]);
+
+            result = this.generateNode(method.body, vars.inherit(varSource));
+        } else if (typeof method === "function") {
+            result = method.apply(thisObj, args);
+        } else {
+            throw new Error(`Expected TemplateMethod or function, but got ${method}`);
+        }
+
+        this.callStack.pop();
+        return result;
+    }
+
+    isSimpleTextNode(node: Ast.BlockItem) {
+        return node instanceof Ast.Line && node.items[0] instanceof Ast.TextNode;
     }
 
     processBlockNode(node: Ast.Block, vars: VariableContext): GeneratedNode[] {
@@ -147,7 +150,7 @@ export class TemplateGenerator implements IMethodHandler {
     processLineNode(node: Ast.Line, vars: VariableContext): GeneratedNode[] {
         const lines = node.items.map(x => this.generateNode(x, vars));
         const nonNullLines = lines.filter(x => x !== null);
-        
+
         if (lines.length === 0) {
             return [new GeneratedNode("")];
         } else if (nonNullLines.length === 0) {
@@ -155,7 +158,7 @@ export class TemplateGenerator implements IMethodHandler {
         } else {
             const hasIndent = node.indentLen > 0;
             const indent = hasIndent ? new GeneratedNode(" ".repeat(node.indentLen)) : null;
-            
+
             let result: GeneratedNode[] = [];
             if (hasIndent)
                 result.push(indent);
@@ -182,8 +185,7 @@ export class TemplateGenerator implements IMethodHandler {
     processIfNode(node: Ast.IfNode, vars: VariableContext): GeneratedNode[] {
         let resultBlock = node.else;
 
-        for (const item of node.items)
-        {
+        for (const item of node.items) {
             const condValue = this.vm.evaluate(item.condition, vars);
             if (condValue) {
                 resultBlock = item.body;
@@ -198,13 +200,13 @@ export class TemplateGenerator implements IMethodHandler {
     processForNode(node: Ast.ForNode, vars: VariableContext): GeneratedNode[] {
         let result: GeneratedNode[];
 
-        const array = <any[]> this.vm.evaluate(node.arrayExpr, vars);
+        const array = <any[]>this.vm.evaluate(node.arrayExpr, vars);
         if (array.length === 0) {
             result = node.else ? this.generateNode(node.else, vars) : null;
         } else {
             const lines: GeneratedNode[][] = [];
 
-            const varSource = new VariableSource(`for: ${node.itemName}`)
+            const varSource = new VariableSource(`for: ${node.itemName}`);
             const newVars = vars.inherit(varSource);
 
             for (let itemIdx = 0; itemIdx < array.length; itemIdx++) {
@@ -214,7 +216,7 @@ export class TemplateGenerator implements IMethodHandler {
                 if (line !== null)
                     lines.push(line);
             }
-            
+
             result = lines.length === 0 ? null : TemplateGenerator.joinLines(lines, node.separator);
         }
 
@@ -226,7 +228,7 @@ export class TemplateGenerator implements IMethodHandler {
         if (result === null) {
             return null;
         } else if (Array.isArray(result)) {
-            return <GeneratedNode[]> result;
+            return <GeneratedNode[]>result;
         } else if (typeof result === "object" && this.objectHook) {
             return this.objectHook(result);
         } else {

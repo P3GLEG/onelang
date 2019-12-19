@@ -1,10 +1,13 @@
-import { OneAst as one } from "./../Ast";
-import { SchemaContext } from "../SchemaContext";
-import { AstVisitor } from "../AstVisitor";
-import { AstHelper } from "../AstHelper";
-import { Reader } from "../../Parsers/Common/Reader";
+import {OneAst as one} from "./../Ast";
+import {SchemaContext} from "../SchemaContext";
+import {AstVisitor} from "../AstVisitor";
+import {Reader} from "../../Parsers/Common/Reader";
 
 export class ProcessTypeHints extends AstVisitor<void> {
+    transform(schemaCtx: SchemaContext) {
+        this.visitSchema(schemaCtx.schema, null);
+    }
+
     protected parseType(reader: Reader) {
         const typeName = reader.expectIdentifier();
 
@@ -27,18 +30,18 @@ export class ProcessTypeHints extends AstVisitor<void> {
                 do {
                     const generics = this.parseType(reader);
                     type.typeArguments.push(generics);
-                } while(reader.readToken(","));
+                } while (reader.readToken(","));
                 reader.expectToken(">");
             }
         }
 
-        while (reader.readToken("[]")) 
+        while (reader.readToken("[]"))
             type = one.Type.Class("OneArray", [type]);
 
         return type;
     }
 
-    protected visitMethodLike(method: one.Method|one.Constructor) {
+    protected visitMethodLike(method: one.Method | one.Constructor) {
         super.visitMethodLike(method, null);
 
         if (method.attributes["signature"]) {
@@ -58,16 +61,12 @@ export class ProcessTypeHints extends AstVisitor<void> {
 
                 reader.expectToken(")");
                 if (reader.readToken(":")) {
-                    (<one.Method> method).returns = this.parseType(reader);
+                    (<one.Method>method).returns = this.parseType(reader);
                 }
-            } catch(e) {
+            } catch (e) {
                 console.error(`Failed to read method signature: ${method.attributes["signature"]}`);
                 // TODO: report parsing error or something...
             }
         }
-    }
-
-    transform(schemaCtx: SchemaContext) {
-        this.visitSchema(schemaCtx.schema, null);
     }
 }

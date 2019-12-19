@@ -1,38 +1,35 @@
-import { OneAst as one } from "./One/Ast";
-import { TypeScriptParser2 } from "./Parsers/TypeScriptParser2";
-import { SchemaTransformer } from "./One/SchemaTransformer";
-import { FillNameTransform } from "./One/Transforms/FillNameTransform";
-import { FillParentTransform } from "./One/Transforms/FillParentTransform";
-import { FillMetaPathTransform } from "./One/Transforms/FillMetaPathTransform";
-import { ResolveIdentifiersTransform } from "./One/Transforms/ResolveIdentifiersTransform";
-import { InferTypesTransform } from "./One/Transforms/InferTypesTransform";
-import { InlineOverlayTypesTransform } from "./One/Transforms/InlineOverlayTypesTransform";
-import { ConvertInlineThisRefTransform } from "./One/Transforms/ConvertInlineThisRefTransform";
-import { InferCharacterTypes } from "./One/Transforms/InferCharacterTypes";
-import { SchemaContext } from "./One/SchemaContext";
-import { OverviewGenerator } from "./One/OverviewGenerator";
-import { AstHelper } from "./One/AstHelper";
-import { SchemaCaseConverter } from "./One/Transforms/CaseConverter";
-import { LangFileSchema } from "./Generator/LangFileSchema";
-import { CodeGenerator } from "./Generator/CodeGenerator";
-import { FillVariableMutability } from "./One/Transforms/FillVariableMutability";
-import { TriviaCommentTransform } from "./One/Transforms/TriviaCommentTransform";
-import { GenericTransformer, GenericTransformerFile } from "./One/Transforms/GenericTransformer";
-import { IncludesCollector } from "./One/Transforms/IncludesCollector";
-import { FillThrowsTransform } from "./One/Transforms/FillThrowsTransform";
-import { RemoveEmptyTemplateStringLiterals } from "./One/Transforms/RemoveEmptyTemplateStringLiterals";
-import { FixGenericAndEnumTypes } from "./One/Transforms/FixGenericAndEnumTypes";
-import { IParser } from "./Parsers/Common/IParser";
-import { CSharpParser } from "./Parsers/CSharpParser";
-import { RubyParser } from "./Parsers/RubyParser";
-import { ExtractCommentAttributes } from "./One/Transforms/ExtractCommentAttributes";
-import { PhpParser } from "./Parsers/PhpParser";
-import { ForceTemplateStrings } from "./One/Transforms/ForceTemplateStrings";
-import { WhileToForTransform } from "./One/Transforms/WhileToFor";
-import { ProcessTypeHints } from "./One/Transforms/ProcessTypeHints";
-import { LangFilePreprocessor } from "./Generator/LangFilePreprocessor";
+import {OneAst as one} from "./Ast";
+import {TypeScriptParser} from "../Parsers/TypeScriptParser";
+import {SchemaTransformer} from "./SchemaTransformer";
+import {FillNameTransform} from "./Transforms/FillNameTransform";
+import {FillParentTransform} from "./Transforms/FillParentTransform";
+import {FillMetaPathTransform} from "./Transforms/FillMetaPathTransform";
+import {ResolveIdentifiersTransform} from "./Transforms/ResolveIdentifiersTransform";
+import {InferTypesTransform} from "./Transforms/InferTypesTransform";
+import {InlineOverlayTypesTransform} from "./Transforms/InlineOverlayTypesTransform";
+import {ConvertInlineThisRefTransform} from "./Transforms/ConvertInlineThisRefTransform";
+import {InferCharacterTypes} from "./Transforms/InferCharacterTypes";
+import {SchemaContext} from "./SchemaContext";
+import {OverviewGenerator} from "./OverviewGenerator";
+import {AstHelper} from "./AstHelper";
+import {SchemaCaseConverter} from "./Transforms/CaseConverter";
+import {LangFileSchema} from "../Generator/LangFileSchema";
+import {CodeGenerator} from "../Generator/CodeGenerator";
+import {FillVariableMutability} from "./Transforms/FillVariableMutability";
+import {TriviaCommentTransform} from "./Transforms/TriviaCommentTransform";
+import {GenericTransformer, GenericTransformerFile} from "./Transforms/GenericTransformer";
+import {FillThrowsTransform} from "./Transforms/FillThrowsTransform";
+import {RemoveEmptyTemplateStringLiterals} from "./Transforms/RemoveEmptyTemplateStringLiterals";
+import {FixGenericAndEnumTypes} from "./Transforms/FixGenericAndEnumTypes";
+import {IParser} from "../Parsers/Common/IParser";
+import {ExtractCommentAttributes} from "./Transforms/ExtractCommentAttributes";
+import {ForceTemplateStrings} from "./Transforms/ForceTemplateStrings";
+import {WhileToForTransform} from "./Transforms/WhileToFor";
+import {ProcessTypeHints} from "./Transforms/ProcessTypeHints";
+import {LangFilePreprocessor} from "../Generator/LangFilePreprocessor";
+import {parse} from "yamljs";
 
-declare var YAML: any;
+//declare var YAML: any;
 
 SchemaTransformer.instance.addTransform(new FillNameTransform());
 SchemaTransformer.instance.addTransform(new FillParentTransform());
@@ -50,14 +47,20 @@ export class OneCompiler {
     genericTransformer: GenericTransformer;
     langName: string;
 
-    saveSchemaStateCallback: (type: "overviewText"|"schemaJson", schemaType: "program"|"overlay"|"stdlib", name: string, data: string) => void;
+    saveSchemaStateCallback: (type: "overviewText" | "schemaJson", schemaType: "program" | "overlay" | "stdlib", name: string, data: string) => void;
+
+    static parseLangSchema(langYaml: string, stdlib: one.Schema) {
+        const schema = <LangFileSchema.LangFile>parse(langYaml);
+        LangFilePreprocessor.preprocess(schema, stdlib);
+        return schema;
+    }
 
     setup(overlayCode: string, stdlibCode: string, genericTransformerYaml: string) {
         overlayCode = overlayCode.replace(/^[^\n]*<reference.*stdlib.d.ts[^\n]*\n/, "");
 
-        const overlaySchema = TypeScriptParser2.parseFile(overlayCode);
-        const stdlibSchema = TypeScriptParser2.parseFile(stdlibCode);
-        this.genericTransformer = new GenericTransformer(<GenericTransformerFile> YAML.parse(genericTransformerYaml));
+        const overlaySchema = TypeScriptParser.parseFile(overlayCode);
+        const stdlibSchema = TypeScriptParser.parseFile(stdlibCode);
+        this.genericTransformer = new GenericTransformer(<GenericTransformerFile>parse(genericTransformerYaml));
 
         overlaySchema.sourceType = "overlay";
         stdlibSchema.sourceType = "stdlib";
@@ -70,7 +73,7 @@ export class OneCompiler {
         ResolveIdentifiersTransform.transform(this.stdlibCtx);
         new InferTypesTransform(this.stdlibCtx).transform();
         this.saveSchemaState(this.stdlibCtx, "0_Converted");
-        
+
         this.overlayCtx = new SchemaContext(overlaySchema, "overlay");
         this.overlayCtx.addDependencySchema(this.stdlibCtx);
         new FixGenericAndEnumTypes().process(this.overlayCtx.schema);
@@ -93,13 +96,7 @@ export class OneCompiler {
         this.langName = langName;
         let arrayName: string;
         if (langName === "typescript") {
-            this.parser = new TypeScriptParser2(programCode);
-        } else if (langName === "csharp") {
-            this.parser = new CSharpParser(programCode);
-        } else if (langName === "ruby") {
-            this.parser = new RubyParser(programCode);
-        } else if (langName === "php") {
-            this.parser = new PhpParser(programCode);
+            this.parser = new TypeScriptParser(programCode);
         } else {
             throw new Error(`[OneCompiler] Unsupported language: ${langName}`);
         }
@@ -107,10 +104,10 @@ export class OneCompiler {
         const schema = this.parser.parse();
 
         // TODO: hack
-        this.overlayCtx.schema.classes[this.parser.langData.literalClassNames.array].meta = { iterable: true };
-        this.stdlibCtx.schema.classes["OneArray"].meta = { iterable: true };
+        this.overlayCtx.schema.classes[this.parser.langData.literalClassNames.array].meta = {iterable: true};
+        this.stdlibCtx.schema.classes["OneArray"].meta = {iterable: true};
         this.stdlibCtx.schema.classes["OneError"].methods["raise"].throws = true;
-        
+
         schema.sourceType = "program";
 
         this.schemaCtx = new SchemaContext(schema, "program");
@@ -122,17 +119,17 @@ export class OneCompiler {
         new FixGenericAndEnumTypes().process(this.schemaCtx.schema);
         new ExtractCommentAttributes().process(this.schemaCtx.schema);
         this.saveSchemaState(this.schemaCtx, `0_Original`);
-        
+
         this.genericTransformer.process(this.schemaCtx.schema);
         this.saveSchemaState(this.schemaCtx, `1_GenericTransforms`);
-        
+
         this.schemaCtx.addDependencySchema(this.overlayCtx);
         this.schemaCtx.addDependencySchema(this.stdlibCtx);
         this.schemaCtx.ensureTransforms("fillName", "fillMetaPath", "fillParent");
         ResolveIdentifiersTransform.transform(this.schemaCtx);
         new InferTypesTransform(this.schemaCtx).transform();
         this.saveSchemaState(this.schemaCtx, `2_TypesInferred`);
-        
+
         this.schemaCtx.ensureTransforms("inlineOverlayTypes");
         this.saveSchemaState(this.schemaCtx, `3_OverlayTypesInlined`);
 
@@ -142,7 +139,6 @@ export class OneCompiler {
         this.schemaCtx.arrayType = "OneArray";
         this.schemaCtx.mapType = "OneMap";
 
-        global["debugOn"] = true;
         new InferTypesTransform(this.schemaCtx).transform();
         this.schemaCtx.ensureTransforms("inferCharacterTypes");
         this.saveSchemaState(this.schemaCtx, `5_TypesInferredAgain`);
@@ -158,29 +154,13 @@ export class OneCompiler {
         this.saveSchemaState(this.schemaCtx, `6_PostProcess`);
     }
 
-    protected saveSchemaState(schemaCtx: SchemaContext, name: string) {
-        if (!this.saveSchemaStateCallback) return;
-
-        const schemaOverview = new OverviewGenerator().generate(schemaCtx);
-        this.saveSchemaStateCallback("overviewText", schemaCtx.schema.sourceType, name, schemaOverview);
-
-        const schemaJson = AstHelper.toJson(schemaCtx.schema);
-        this.saveSchemaStateCallback("schemaJson", schemaCtx.schema.sourceType, name, schemaJson);
-    }
-
-    static parseLangSchema(langYaml: string, stdlib: one.Schema) {
-        const schema = <LangFileSchema.LangFile> YAML.parse(langYaml);
-        LangFilePreprocessor.preprocess(schema, stdlib);
-        return schema;
-    }
-
     getCodeGenerator(lang: LangFileSchema.LangFile) {
         new SchemaCaseConverter(lang.casing).process(this.schemaCtx.schema);
         new SchemaCaseConverter(lang.casing).process(this.stdlibCtx.schema);
         new FillVariableMutability(lang).process(this.schemaCtx.schema);
         new FillThrowsTransform(lang).process(this.schemaCtx.schema);
         this.saveSchemaState(this.schemaCtx, `10_${lang.name ? `${lang.name}_` : ""}Init`);
-        
+
         const codeGen = new CodeGenerator(this.schemaCtx.schema, this.stdlibCtx.schema, lang);
         return codeGen;
     }
@@ -191,5 +171,15 @@ export class OneCompiler {
         codeGen.model.config.genMeta = genMeta;
         const generatedCode = codeGen.generate(callTestMethod);
         return generatedCode;
+    }
+
+    protected saveSchemaState(schemaCtx: SchemaContext, name: string) {
+        if (!this.saveSchemaStateCallback) return;
+
+        const schemaOverview = new OverviewGenerator().generate(schemaCtx);
+        this.saveSchemaStateCallback("overviewText", schemaCtx.schema.sourceType, name, schemaOverview);
+
+        const schemaJson = AstHelper.toJson(schemaCtx.schema);
+        this.saveSchemaStateCallback("schemaJson", schemaCtx.schema.sourceType, name, schemaJson);
     }
 }

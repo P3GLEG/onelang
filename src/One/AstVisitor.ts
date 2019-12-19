@@ -1,4 +1,4 @@
-import { OneAst as one } from "./Ast";
+import {OneAst as one} from "./Ast";
 
 export abstract class AstVisitor<TContext> {
     protected log(data: any) {
@@ -8,11 +8,11 @@ export abstract class AstVisitor<TContext> {
 
     protected visitNode(node: one.INode, context: TContext) {
     }
-    
+
     protected visitNamedItem(namedItem: one.NamedItem, context: TContext) {
         this.visitNode(namedItem, context);
     }
-    
+
     protected visitType(type: one.Type, context: TContext) {
         if (!type) return;
 
@@ -21,8 +21,9 @@ export abstract class AstVisitor<TContext> {
             for (const typeArg of type.typeArguments)
                 this.visitType(typeArg, context);
     }
- 
-    protected visitIdentifier(id: one.Identifier, context: TContext) { }
+
+    protected visitIdentifier(id: one.Identifier, context: TContext) {
+    }
 
     protected visitReturnStatement(stmt: one.ReturnStatement, context: TContext) {
         if (stmt.expression)
@@ -74,9 +75,10 @@ export abstract class AstVisitor<TContext> {
         this.visitBlock(stmt.body, context);
     }
 
-    protected visitBreakStatement(stmt: one.Statement, context: TContext) { }
+    protected visitBreakStatement(stmt: one.Statement, context: TContext) {
+    }
 
-    protected visitUnsetStatement(stmt: one.UnsetStatement, context: TContext) { 
+    protected visitUnsetStatement(stmt: one.UnsetStatement, context: TContext) {
         this.visitExpression(stmt.expression, context);
     }
 
@@ -87,25 +89,25 @@ export abstract class AstVisitor<TContext> {
     protected visitStatement(statement: one.Statement, context: TContext) {
         this.visitNode(statement, context);
         if (statement.stmtType === one.StatementType.Return) {
-            return this.visitReturnStatement(<one.ReturnStatement> statement, context);
+            return this.visitReturnStatement(<one.ReturnStatement>statement, context);
         } else if (statement.stmtType === one.StatementType.ExpressionStatement) {
-            return this.visitExpressionStatement(<one.ExpressionStatement> statement, context);
+            return this.visitExpressionStatement(<one.ExpressionStatement>statement, context);
         } else if (statement.stmtType === one.StatementType.If) {
-            return this.visitIfStatement(<one.IfStatement> statement, context);
+            return this.visitIfStatement(<one.IfStatement>statement, context);
         } else if (statement.stmtType === one.StatementType.Throw) {
-            return this.visitThrowStatement(<one.ThrowStatement> statement, context);
+            return this.visitThrowStatement(<one.ThrowStatement>statement, context);
         } else if (statement.stmtType === one.StatementType.VariableDeclaration) {
-            return this.visitVariableDeclaration(<one.VariableDeclaration> statement, context);
+            return this.visitVariableDeclaration(<one.VariableDeclaration>statement, context);
         } else if (statement.stmtType === one.StatementType.While) {
-            return this.visitWhileStatement(<one.WhileStatement> statement, context);
+            return this.visitWhileStatement(<one.WhileStatement>statement, context);
         } else if (statement.stmtType === one.StatementType.For) {
-            return this.visitForStatement(<one.ForStatement> statement, context);
+            return this.visitForStatement(<one.ForStatement>statement, context);
         } else if (statement.stmtType === one.StatementType.Foreach) {
-            return this.visitForeachStatement(<one.ForeachStatement> statement, context);
+            return this.visitForeachStatement(<one.ForeachStatement>statement, context);
         } else if (statement.stmtType === one.StatementType.Break) {
             return this.visitBreakStatement(statement, context);
         } else if (statement.stmtType === one.StatementType.Unset) {
-            return this.visitUnsetStatement(<one.UnsetStatement> statement, context);
+            return this.visitUnsetStatement(<one.UnsetStatement>statement, context);
         } else {
             return this.visitUnknownStatement(statement, context);
         }
@@ -141,13 +143,14 @@ export abstract class AstVisitor<TContext> {
             this.visitExpression(arg, context);
     }
 
-    protected visitLiteral(expr: one.Literal, context: TContext) { }
+    protected visitLiteral(expr: one.Literal, context: TContext) {
+    }
 
     protected visitTemplateString(expr: one.TemplateString, context: TContext) {
         for (const part of expr.parts.filter(x => x.expr))
             this.visitExpression(part.expr, context);
     }
-    
+
     protected visitParenthesizedExpression(expr: one.ParenthesizedExpression, context: TContext) {
         this.visitExpression(expr.expression, context);
     }
@@ -189,68 +192,72 @@ export abstract class AstVisitor<TContext> {
             this.visitExpression(expr.thisExpr, context);
     }
 
-    protected visitClassReference(expr: one.ClassReference, context: TContext) { }
+    protected visitClassReference(expr: one.ClassReference, context: TContext) {
+    }
 
-    protected visitThisReference(expr: one.ThisReference, context: TContext) { }
+    protected visitThisReference(expr: one.ThisReference, context: TContext) {
+    }
 
-    protected visitEnumReference(expr: one.EnumReference, context: TContext) { }
+    protected visitEnumReference(expr: one.EnumReference, context: TContext) {
+    }
 
-    protected visitEnumMemberReference(expr: one.EnumReference, context: TContext) { }
+    protected visitEnumMemberReference(expr: one.EnumReference, context: TContext) {
+    }
 
-    protected visitCastExpression(expr: one.CastExpression, context: TContext) { 
+    protected visitCastExpression(expr: one.CastExpression, context: TContext) {
         this.visitExpression(expr.expression, context);
     }
 
     protected visitExpression(expression: one.Expression, context: TContext) {
         this.visitNode(expression, context);
         if (expression.exprKind === one.ExpressionKind.Binary) {
-            return this.visitBinaryExpression(<one.BinaryExpression> expression, context);
+            return this.visitBinaryExpression(<one.BinaryExpression>expression, context);
         } else if (expression.exprKind === one.ExpressionKind.Call) {
-            return this.visitCallExpression(<one.CallExpression> expression, context);
+            return this.visitCallExpression(<one.CallExpression>expression, context);
         } else if (expression.exprKind === one.ExpressionKind.Conditional) {
-            return this.visitConditionalExpression(<one.ConditionalExpression> expression, context);
+            return this.visitConditionalExpression(<one.ConditionalExpression>expression, context);
         } else if (expression.exprKind === one.ExpressionKind.Identifier) {
-            return this.visitIdentifier(<one.Identifier> expression, context);
+            return this.visitIdentifier(<one.Identifier>expression, context);
         } else if (expression.exprKind === one.ExpressionKind.New) {
-            return this.visitNewExpression(<one.NewExpression> expression, context);
+            return this.visitNewExpression(<one.NewExpression>expression, context);
         } else if (expression.exprKind === one.ExpressionKind.Literal) {
-            return this.visitLiteral(<one.Literal> expression, context);
+            return this.visitLiteral(<one.Literal>expression, context);
         } else if (expression.exprKind === one.ExpressionKind.TemplateString) {
-            return this.visitTemplateString(<one.TemplateString> expression, context);
+            return this.visitTemplateString(<one.TemplateString>expression, context);
         } else if (expression.exprKind === one.ExpressionKind.Parenthesized) {
-            return this.visitParenthesizedExpression(<one.ParenthesizedExpression> expression, context);
+            return this.visitParenthesizedExpression(<one.ParenthesizedExpression>expression, context);
         } else if (expression.exprKind === one.ExpressionKind.Unary) {
-            return this.visitUnaryExpression(<one.UnaryExpression> expression, context);
+            return this.visitUnaryExpression(<one.UnaryExpression>expression, context);
         } else if (expression.exprKind === one.ExpressionKind.PropertyAccess) {
-            return this.visitPropertyAccessExpression(<one.PropertyAccessExpression> expression, context);
+            return this.visitPropertyAccessExpression(<one.PropertyAccessExpression>expression, context);
         } else if (expression.exprKind === one.ExpressionKind.ElementAccess) {
-            return this.visitElementAccessExpression(<one.ElementAccessExpression> expression, context);
+            return this.visitElementAccessExpression(<one.ElementAccessExpression>expression, context);
         } else if (expression.exprKind === one.ExpressionKind.ArrayLiteral) {
-            return this.visitArrayLiteral(<one.ArrayLiteral> expression, context);
+            return this.visitArrayLiteral(<one.ArrayLiteral>expression, context);
         } else if (expression.exprKind === one.ExpressionKind.MapLiteral) {
-            return this.visitMapLiteral(<one.MapLiteral> expression, context);
+            return this.visitMapLiteral(<one.MapLiteral>expression, context);
         } else if (expression.exprKind === one.ExpressionKind.VariableReference) {
-            return this.visitVariableRef(<one.VariableRef> expression, context);
+            return this.visitVariableRef(<one.VariableRef>expression, context);
         } else if (expression.exprKind === one.ExpressionKind.MethodReference) {
-            return this.visitMethodReference(<one.MethodReference> expression, context);
+            return this.visitMethodReference(<one.MethodReference>expression, context);
         } else if (expression.exprKind === one.ExpressionKind.ClassReference) {
-            return this.visitClassReference(<one.ClassReference> expression, context);
+            return this.visitClassReference(<one.ClassReference>expression, context);
         } else if (expression.exprKind === one.ExpressionKind.ThisReference) {
-            return this.visitThisReference(<one.ThisReference> expression, context);
+            return this.visitThisReference(<one.ThisReference>expression, context);
         } else if (expression.exprKind === one.ExpressionKind.EnumReference) {
-            return this.visitEnumReference(<one.EnumReference> expression, context);
+            return this.visitEnumReference(<one.EnumReference>expression, context);
         } else if (expression.exprKind === one.ExpressionKind.EnumMemberReference) {
-            return this.visitEnumMemberReference(<one.EnumMemberReference> expression, context);
+            return this.visitEnumMemberReference(<one.EnumMemberReference>expression, context);
         } else if (expression.exprKind === one.ExpressionKind.Cast) {
-            return this.visitCastExpression(<one.CastExpression> expression, context);
+            return this.visitCastExpression(<one.CastExpression>expression, context);
         } else {
             return this.visitUnknownExpression(expression, context);
         }
     }
 
-    protected visitMethodLike(method: one.Method|one.Constructor, context: TContext) {
+    protected visitMethodLike(method: one.Method | one.Constructor, context: TContext) {
         this.visitNamedItem(method, context);
-        
+
         if (method.body)
             this.visitBlock(method.body, context);
 
@@ -262,15 +269,15 @@ export abstract class AstVisitor<TContext> {
         this.visitMethodLike(method, context);
         this.visitType(method.returns, context);
     }
- 
+
     protected visitConstructor(constructor: one.Constructor, context: TContext) {
         this.visitMethodLike(constructor, context);
     }
- 
+
     protected visitField(field: one.Field, context: TContext) {
         this.visitVariableDeclaration(field, context);
     }
- 
+
     protected visitProperty(prop: one.Property, context: TContext) {
         this.visitBlock(prop.getter, context);
         this.visitVariable(prop, context);
@@ -282,7 +289,7 @@ export abstract class AstVisitor<TContext> {
         for (const method of Object.values(intf.methods))
             this.visitMethod(method, context);
     }
- 
+
     protected visitClass(cls: one.Class, context: TContext) {
         this.visitNamedItem(cls, context);
 
@@ -298,8 +305,8 @@ export abstract class AstVisitor<TContext> {
         for (const field of Object.values(cls.fields))
             this.visitField(field, context);
     }
- 
-    protected visitEnum(enum_: one.Enum, context: TContext) { 
+
+    protected visitEnum(enum_: one.Enum, context: TContext) {
         this.visitNamedItem(enum_, context);
 
         for (var item of enum_.values)
@@ -307,7 +314,7 @@ export abstract class AstVisitor<TContext> {
     }
 
     protected visitEnumMember(enumMember: one.EnumMember, context: TContext) {
-        this.visitNamedItem(enumMember, context);        
+        this.visitNamedItem(enumMember, context);
     }
 
     protected visitSchema(schema: one.Schema, context: TContext) {

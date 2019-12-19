@@ -20,12 +20,15 @@
     "browserify": "^14.4.0"
   },
   "scripts": {
+    "build": "./node_modules/typescript/bin/tsc",
+    "clean": "rm -rf ./js && find ./src -type f -name '*.js' -delete",
+    "run": "./node_modules/typescript/bin/tsc && node js/app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": {
-    "name" : "Koczka Tamás",
-    "email" : "koczkatamas@gmail.com",
-    "url" : "https://kt.gy/"
+    "name": "Koczka Tamás",
+    "email": "koczkatamas@gmail.com",
+    "url": "https://kt.gy/"
   },
   "license": "MIT"
 }

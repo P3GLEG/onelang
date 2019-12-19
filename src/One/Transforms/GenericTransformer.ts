@@ -1,10 +1,6 @@
-import { OneAst as one } from "../Ast";
-import { AstVisitor } from "../AstVisitor";
-import { ISchemaTransform } from "../SchemaTransformer";
-import { SchemaContext } from "../SchemaContext";
-import { OverviewGenerator } from "../OverviewGenerator";
-import { AstHelper } from "../AstHelper";
-import { LangFileSchema } from "../../Generator/LangFileSchema";
+import {OneAst as one} from "../Ast";
+import {AstVisitor} from "../AstVisitor";
+import {AstHelper} from "../AstHelper";
 
 export interface GenericTransformerFile {
     transforms: {
@@ -20,7 +16,7 @@ class VariableContext {
 }
 
 class TransformPropInfo {
-    type: "matchObject"|"matchValue"|"saveVar";
+    type: "matchObject" | "matchValue" | "saveVar";
     matchValue: any;
     matchObject: TransformObjectInfo;
     saveVarName: string;
@@ -66,7 +62,7 @@ class TransformObjectInfo {
 }
 
 class ValueSetter {
-    type: "literal"|"array"|"object"|"variable";
+    type: "literal" | "array" | "object" | "variable";
     arrayItems: ValueSetter[];
 
     constructor(value: any) {
@@ -116,6 +112,11 @@ export class GenericTransformer extends AstVisitor<void> {
         this.transforms = file.transforms.map(x => new GenericTransform(x.input, x.output, x.langs));
     }
 
+    process(schema: one.Schema) {
+        this.langTransforms = this.transforms.filter(x => !x.langs || x.langs.includes(schema.langData.langId));
+        this.visitSchema(schema, null);
+    }
+
     protected visitStatement(statement: one.Statement) {
         for (const transform of this.langTransforms)
             if (transform.execute(statement))
@@ -130,10 +131,5 @@ export class GenericTransformer extends AstVisitor<void> {
                 break;
 
         super.visitExpression(expression, null);
-    }
-
-    process(schema: one.Schema) {
-        this.langTransforms = this.transforms.filter(x => !x.langs || x.langs.includes(schema.langData.langId));
-        this.visitSchema(schema, null);
     }
 }

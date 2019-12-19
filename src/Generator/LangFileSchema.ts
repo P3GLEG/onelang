@@ -1,4 +1,4 @@
-import { TemplateMethod } from "./OneTemplate/TemplateGenerator";
+import {TemplateMethod} from "./OneTemplate/TemplateGenerator";
 
 export namespace LangFileSchema {
     export interface FunctionArgument {

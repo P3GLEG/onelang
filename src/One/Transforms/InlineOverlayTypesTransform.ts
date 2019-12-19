@@ -1,20 +1,24 @@
-import { OneAst as one } from "../Ast";
-import { AstVisitor } from "../AstVisitor";
-import { ISchemaTransform } from "../SchemaTransformer";
-import { SchemaContext } from "../SchemaContext";
-import { OverviewGenerator } from "../OverviewGenerator";
-import { AstHelper } from "../AstHelper";
-import { arrayEq } from "../../Utils/Helpers";
+import {OneAst as one} from "../Ast";
+import {AstVisitor} from "../AstVisitor";
+import {ISchemaTransform} from "../SchemaTransformer";
+import {SchemaContext} from "../SchemaContext";
+import {AstHelper} from "../AstHelper";
+import {arrayEq} from "../../Utils/Helpers";
 
 export class VariableReplacer extends AstVisitor<void> {
     thisReplacement: one.Expression;
     replacements: { [varPath: string]: one.Expression } = {};
 
+    visitStatements(statements: one.Statement[]) {
+        for (const statement of statements)
+            this.visitStatement(statement, null);
+    }
+
     protected visitThisReference(expr: one.ThisReference) {
         if (this.thisReplacement)
             AstHelper.replaceProperties(expr, this.thisReplacement, []);
     }
-    
+
     protected visitVariableRef(expr: one.VariableRef) {
         if (expr.thisExpr)
             this.visitExpression(expr.thisExpr, null);
@@ -23,11 +27,6 @@ export class VariableReplacer extends AstVisitor<void> {
         if (changeTo)
             AstHelper.replaceProperties(expr, changeTo, []);
     }
-
-    visitStatements(statements: one.Statement[]) {
-        for (const statement of statements)
-            this.visitStatement(statement, null);
-    }
 }
 
 /**
@@ -35,14 +34,20 @@ export class VariableReplacer extends AstVisitor<void> {
  * It also replaces overlay InstanceField references.
  */
 class ReplaceReferences extends AstVisitor<void> {
-    constructor(public schemaCtx: SchemaContext) { super(); }
+    constructor(public schemaCtx: SchemaContext) {
+        super();
+    }
+
+    process() {
+        this.visitSchema(this.schemaCtx.schema, null);
+    }
 
     protected overlayMethod(expr: one.Expression, method: one.Method, thisExpr: one.Expression, args: one.Expression[]) {
         const cls = method.classRef;
-        
+
         if (!(cls.meta && cls.meta.overlay))
             return;
-            
+
         if (method.parameters.length != args.length) {
             this.log(`Called overlay method ${AstHelper.methodRepr(method)} ` +
                 `with parameters (${args.map(x => x.valueType.repr()).join(", ")})`);
@@ -56,16 +61,16 @@ class ReplaceReferences extends AstVisitor<void> {
         for (var i = 0; i < method.parameters.length; i++)
             varReplacer.replacements[method.parameters[i].metaPath] = args[i];
 
-        // TODO: 
+        // TODO:
         //  - resolve variable declaration conflicts
         varReplacer.visitStatements(statements);
         if (statements.length !== 1 || (statements[0].stmtType !== one.StatementType.ExpressionStatement
-                && statements[0].stmtType !== one.StatementType.Return)) {
+            && statements[0].stmtType !== one.StatementType.Return)) {
             this.log("Expected Expression or Return statement");
             return;
         }
 
-        const newCallExpr = <one.CallExpression> (<one.ExpressionStatement> statements[0]).expression;
+        const newCallExpr = <one.CallExpression>(<one.ExpressionStatement>statements[0]).expression;
         if (newCallExpr.exprKind !== one.ExpressionKind.Call) {
             this.log("Expected CallExpression");
             return;
@@ -77,10 +82,10 @@ class ReplaceReferences extends AstVisitor<void> {
     protected visitCallExpression(expr: one.CallExpression) {
         super.visitCallExpression(expr, null);
 
-        if (expr.method.exprKind !== one.ExpressionKind.MethodReference) 
+        if (expr.method.exprKind !== one.ExpressionKind.MethodReference)
             return;
 
-        const methodRef = <one.MethodReference> expr.method;
+        const methodRef = <one.MethodReference>expr.method;
         this.overlayMethod(expr, methodRef.methodRef, methodRef.thisExpr, expr.arguments);
     }
 
@@ -103,7 +108,7 @@ class ReplaceReferences extends AstVisitor<void> {
     protected visitVariableRef(expr: one.VariableRef) {
         if (expr.varType !== one.VariableRefType.InstanceField) return;
 
-        const prop = <one.Property> expr.varRef;
+        const prop = <one.Property>expr.varRef;
         if (!(prop.classRef && prop.classRef.meta && prop.classRef.meta.overlay)) return;
 
         const stmts = prop.getter.statements;
@@ -113,19 +118,19 @@ class ReplaceReferences extends AstVisitor<void> {
         }
 
         const statements = AstHelper.clone(stmts);
-        
+
         const varReplacer = new VariableReplacer();
         varReplacer.thisReplacement = expr.thisExpr;
         varReplacer.visitStatements(statements);
 
-        const retStmt = <one.ReturnStatement> statements[0];
+        const retStmt = <one.ReturnStatement>statements[0];
         AstHelper.replaceProperties(expr, retStmt.expression);
     }
 
     protected visitExpressionStatement(stmt: one.ExpressionStatement) {
         return this.visitExpression(stmt.expression, null);
     }
-    
+
     /**
      * Goes through all statements in a block. One such statement can be converted
      * to more statements.
@@ -135,20 +140,22 @@ class ReplaceReferences extends AstVisitor<void> {
         for (const statement of block.statements) {
             const newValue = this.visitStatement(statement, null);
             if (Array.isArray(newValue))
-                newStatements.push(... <one.Statement[]> <any> newValue);
+                newStatements.push(...<one.Statement[]><any>newValue);
             else
                 newStatements.push(statement);
         }
         block.statements = newStatements;
     }
+}
+
+class ReplaceVariables extends AstVisitor<void> {
+    constructor(public schemaCtx: SchemaContext) {
+        super();
+    }
 
     process() {
         this.visitSchema(this.schemaCtx.schema, null);
     }
-}
-
-class ReplaceVariables extends AstVisitor<void> {
-    constructor(public schemaCtx: SchemaContext) { super(); }
 
     protected convertType(type: one.Type) {
         if (!type) return;
@@ -157,11 +164,11 @@ class ReplaceVariables extends AstVisitor<void> {
         if (cls && cls.meta && cls.meta.overlay)
             type.className = cls.fields["_one"].type.className;
 
-        for (const typeArg of type.typeArguments||[])
+        for (const typeArg of type.typeArguments || [])
             this.convertType(typeArg);
     }
 
-    protected visitCastExpression(expr: one.CastExpression) { 
+    protected visitCastExpression(expr: one.CastExpression) {
         super.visitCastExpression(expr, null);
         this.convertType(expr.newType);
     }
@@ -179,10 +186,6 @@ class ReplaceVariables extends AstVisitor<void> {
     protected visitMethod(method: one.Method) {
         super.visitMethod(method, null);
         this.convertType(method.returns);
-    }
-
-    process() {
-        this.visitSchema(this.schemaCtx.schema, null);
     }
 }
 

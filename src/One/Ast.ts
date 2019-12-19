@@ -7,12 +7,12 @@ export namespace OneAst {
             character: string,
             map: string,
             array: string,
-         };
-    
-         langId: string;
-         allowImplicitVariableDeclaration: boolean;
-         supportsTemplateStrings: boolean;
-         supportsFor: boolean;
+        };
+
+        langId: string;
+        allowImplicitVariableDeclaration: boolean;
+        supportsTemplateStrings: boolean;
+        supportsFor: boolean;
     }
 
     export interface TextRange {
@@ -30,7 +30,7 @@ export namespace OneAst {
     }
 
     export interface Schema {
-        sourceType: "program"|"overlay"|"stdlib";
+        sourceType: "program" | "overlay" | "stdlib";
         langData: ILangData;
         meta: { transforms?: { [name: string]: boolean } };
         globals: { [name: string]: VariableDeclaration };
@@ -67,7 +67,7 @@ export namespace OneAst {
             iterable?: boolean;
         };
         leadingTrivia: string;
-        attributes: { [name: string]: any };        
+        attributes: { [name: string]: any };
         baseInterfaces: string[];
     }
 
@@ -83,8 +83,8 @@ export namespace OneAst {
     }
 
     export enum Visibility { Public = "public", Protected = "protected", Private = "private" }
-    
-    export enum TypeKind { 
+
+    export enum TypeKind {
         Void = "void",
         Any = "any",
         Null = "null",
@@ -96,69 +96,102 @@ export namespace OneAst {
     }
 
     export class Type implements INode {
+        static PrimitiveTypeKinds = [TypeKind.Void, TypeKind.Any, TypeKind.Null];
         $objType = "Type";
-        
-        constructor(public typeKind: TypeKind = null) { }
-        
         public className: string;
         public enumName: string;
         public typeArguments: Type[];
         public classType: Type;
         public methodName: string;
         public genericsName: string;
-        nodeData?: NodeData;        
+        nodeData?: NodeData;
 
-        get isPrimitiveType() { return Type.PrimitiveTypeKinds.includes(this.typeKind); }
-        get isClass() { return this.typeKind === TypeKind.Class; }
-        get isInterface() { return this.typeKind === TypeKind.Interface; }
-        get isClassOrInterface() { return this.isClass || this.isInterface; }
-        get isComplexClass() { return this.canBeNull && !this.isAny; } // TODO: hack for C++ (any) & Go (interface{})
-        get isEnum() { return this.typeKind === TypeKind.Enum; }
-        get isMethod() { return this.typeKind === TypeKind.Method; }
-        get isGenerics() { return this.typeKind === TypeKind.Generics; }
-        get isAny() { return this.typeKind === TypeKind.Any; }
-        get isNull() { return this.typeKind === TypeKind.Null; }
-        get isVoid() { return this.typeKind === TypeKind.Void; }
-        get isNumber() { return this.className === "OneNumber"; }
-        get isString() { return this.className === "OneString"; }
-        get isCharacter() { return this.className === "OneCharacter"; }
-        get isBoolean() { return this.className === "OneBoolean"; }
-        get isOneArray() { return this.className === "OneArray"; }
-        get isOneMap() { return this.className === "OneMap"; }
-
-        get canBeNull() { return (this.isClassOrInterface && !this.isNumber && !this.isCharacter && !this.isString && !this.isBoolean) || this.isAny; }
-
-        equals(other: Type) {
-            if (this.typeKind !== other.typeKind)
-                return false;
-
-            if (this.isPrimitiveType)
-                return true;
-
-            const typeArgsMatch = this.typeArguments.length === other.typeArguments.length
-                && this.typeArguments.every((thisArg, i) => thisArg.equals(other.typeArguments[i]));
-
-            if (this.typeKind === TypeKind.Class)
-                return this.className === other.className && typeArgsMatch;
-            else
-                throw new Error(`Type.equals: Unknown typeKind: ${this.typeKind}`);
+        constructor(public typeKind: TypeKind = null) {
         }
 
-        repr() {
-            if (this.isPrimitiveType) {
-                return this.typeKind.toString();
-            } else if (this.isClassOrInterface) {
-                return (this.isInterface ? "(I)" : "") + this.className + 
-                    (this.typeArguments.length === 0 ? "" : `<${this.typeArguments.map(x => x.repr()).join(", ")}>`);
-            } else if (this.isMethod) {
-                return `${this.classType.repr()}::${this.methodName}`;
-            } else if (this.isGenerics) {
-                return this.genericsName;
-            } else if (this.isEnum) {
-                return `${this.enumName} (enum)`;
-            } else {
-                return "?";
-            }
+        // TODO / note: new instance is required because of NodeData... maybe rethink this approach?
+        static get Void() {
+            return new Type(TypeKind.Void);
+        }
+
+        static get Any() {
+            return new Type(TypeKind.Any);
+        }
+
+        static get Null() {
+            return new Type(TypeKind.Null);
+        }
+
+        get isPrimitiveType() {
+            return Type.PrimitiveTypeKinds.includes(this.typeKind);
+        }
+
+        get isClass() {
+            return this.typeKind === TypeKind.Class;
+        }
+
+        get isInterface() {
+            return this.typeKind === TypeKind.Interface;
+        }
+
+        get isClassOrInterface() {
+            return this.isClass || this.isInterface;
+        }
+
+        get isComplexClass() {
+            return this.canBeNull && !this.isAny;
+        } // TODO: hack for C++ (any) & Go (interface{})
+
+        get isEnum() {
+            return this.typeKind === TypeKind.Enum;
+        }
+
+        get isMethod() {
+            return this.typeKind === TypeKind.Method;
+        }
+
+        get isGenerics() {
+            return this.typeKind === TypeKind.Generics;
+        }
+
+        get isAny() {
+            return this.typeKind === TypeKind.Any;
+        }
+
+        get isNull() {
+            return this.typeKind === TypeKind.Null;
+        }
+
+        get isVoid() {
+            return this.typeKind === TypeKind.Void;
+        }
+
+        get isNumber() {
+            return this.className === "OneNumber";
+        }
+
+        get isString() {
+            return this.className === "OneString";
+        }
+
+        get isCharacter() {
+            return this.className === "OneCharacter";
+        }
+
+        get isBoolean() {
+            return this.className === "OneBoolean";
+        }
+
+        get isOneArray() {
+            return this.className === "OneArray";
+        }
+
+        get isOneMap() {
+            return this.className === "OneMap";
+        }
+
+        get canBeNull() {
+            return (this.isClassOrInterface && !this.isNumber && !this.isCharacter && !this.isString && !this.isBoolean) || this.isAny;
         }
 
         get oneName() {
@@ -183,13 +216,6 @@ export namespace OneAst {
             }
         }
 
-        static PrimitiveTypeKinds = [TypeKind.Void, TypeKind.Any, TypeKind.Null];
-
-        // TODO / note: new instance is required because of NodeData... maybe rethink this approach?
-        static get Void() { return new Type(TypeKind.Void); }
-        static get Any() { return new Type(TypeKind.Any); }
-        static get Null() { return new Type(TypeKind.Null); }
-        
         static Class(className: string, generics: Type[] = []) {
             if (!className)
                 throw new Error("expected className in Type.Class");
@@ -235,6 +261,39 @@ export namespace OneAst {
                 throw new Error("Invalid source to load Type from!");
             return Object.assign(new Type(), source);
         }
+
+        equals(other: Type) {
+            if (this.typeKind !== other.typeKind)
+                return false;
+
+            if (this.isPrimitiveType)
+                return true;
+
+            const typeArgsMatch = this.typeArguments.length === other.typeArguments.length
+                && this.typeArguments.every((thisArg, i) => thisArg.equals(other.typeArguments[i]));
+
+            if (this.typeKind === TypeKind.Class)
+                return this.className === other.className && typeArgsMatch;
+            else
+                throw new Error(`Type.equals: Unknown typeKind: ${this.typeKind}`);
+        }
+
+        repr() {
+            if (this.isPrimitiveType) {
+                return this.typeKind.toString();
+            } else if (this.isClassOrInterface) {
+                return (this.isInterface ? "(I)" : "") + this.className +
+                    (this.typeArguments.length === 0 ? "" : `<${this.typeArguments.map(x => x.repr()).join(", ")}>`);
+            } else if (this.isMethod) {
+                return `${this.classType.repr()}::${this.methodName}`;
+            } else if (this.isGenerics) {
+                return this.genericsName;
+            } else if (this.isEnum) {
+                return `${this.enumName} (enum)`;
+            } else {
+                return "?";
+            }
+        }
     }
 
     export interface VariableBase extends NamedItem {
@@ -257,7 +316,8 @@ export namespace OneAst {
         setter: Block;
     }
 
-    export interface MethodParameter extends VariableDeclaration { }
+    export interface MethodParameter extends VariableDeclaration {
+    }
 
     export interface Constructor extends NamedItem {
         classRef?: Class;
@@ -312,7 +372,7 @@ export namespace OneAst {
 
     export interface Expression extends INode {
         exprKind: ExpressionKind;
-        parentRef?: Expression|Statement;
+        parentRef?: Expression | Statement;
         valueType?: Type;
         typeArgs?: string[];
     }
@@ -327,7 +387,7 @@ export namespace OneAst {
         valueType?: Type;
     }
 
-    export enum VariableRefType { 
+    export enum VariableRefType {
         StaticField = "StaticField",
         InstanceField = "InstanceField",
         MethodArgument = "MethodArgument",
@@ -337,6 +397,10 @@ export namespace OneAst {
     export class VariableRef extends Reference {
         $objType = "VariableRef";
         exprKind = ExpressionKind.VariableReference;
+
+        protected constructor(public varType: VariableRefType, public varRef: VariableBase, public thisExpr?: Expression) {
+            super();
+        }
 
         static InstanceField(thisExpr: Expression, varRef: VariableBase) {
             return new VariableRef(VariableRefType.InstanceField, varRef, thisExpr);
@@ -357,32 +421,38 @@ export namespace OneAst {
         static Load(source: any) {
             return Object.assign(new VariableRef(null, null), source);
         }
-
-        protected constructor(public varType: VariableRefType, public varRef: VariableBase, public thisExpr?: Expression) { super(); }
     }
 
     export class MethodReference extends Reference {
         exprKind = ExpressionKind.MethodReference;
 
-        constructor(public methodRef: Method, public thisExpr?: Expression) { super(); }
+        constructor(public methodRef: Method, public thisExpr?: Expression) {
+            super();
+        }
     }
 
     export class ClassReference extends Reference {
         exprKind = ExpressionKind.ClassReference;
-        
-        constructor(public classRef: Class) { super(); }
+
+        constructor(public classRef: Class) {
+            super();
+        }
     }
 
     export class EnumReference extends Reference {
         exprKind = ExpressionKind.EnumReference;
-        
-        constructor(public enumRef: Enum) { super(); }
+
+        constructor(public enumRef: Enum) {
+            super();
+        }
     }
 
     export class EnumMemberReference extends Reference {
         exprKind = ExpressionKind.EnumMemberReference;
-        
-        constructor(public enumMemberRef: EnumMember, public enumRef: Enum) { super(); }
+
+        constructor(public enumMemberRef: EnumMember, public enumRef: Enum) {
+            super();
+        }
     }
 
     export class ThisReference extends Reference {
@@ -390,7 +460,7 @@ export namespace OneAst {
     }
 
     export interface CallExpression extends Expression {
-        method: Expression|MethodReference;
+        method: Expression | MethodReference;
         arguments: CallArgument[];
     }
 
@@ -399,7 +469,7 @@ export namespace OneAst {
     }
 
     export interface Literal extends Expression {
-        literalType: "numeric"|"string"|"character"|"boolean"|"null";
+        literalType: "numeric" | "string" | "character" | "boolean" | "null";
         value: any;
         escapedText: string;
         escapedTextSingle: string;
@@ -424,7 +494,7 @@ export namespace OneAst {
     }
 
     export interface NewExpression extends Expression {
-        cls: Identifier|ClassReference;
+        cls: Identifier | ClassReference;
         typeArguments: Type[];
         arguments: CallArgument[];
     }
@@ -436,7 +506,7 @@ export namespace OneAst {
     }
 
     export interface UnaryExpression extends Expression {
-        unaryType: "postfix"|"prefix";
+        unaryType: "postfix" | "prefix";
         operator: string; //"++" | "--" | "+" | "-" | "~" | "!";
         operand: Expression;
     }
@@ -468,7 +538,7 @@ export namespace OneAst {
 
     // ======================= STATEMENTS ======================
 
-    export enum StatementType { 
+    export enum StatementType {
         If = "If",
         Return = "Return",
         ExpressionStatement = "ExpressionStatement",
@@ -533,7 +603,7 @@ export namespace OneAst {
     }
 
     export interface Block extends NamedItem {
-        parentRef?: Statement|MethodLike;
+        parentRef?: Statement | MethodLike;
         statements: Statement[];
     }
 }

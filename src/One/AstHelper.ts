@@ -1,5 +1,5 @@
-import { OneAst as one } from "./Ast";
-import { LangFileSchema } from "../Generator/LangFileSchema";
+import {OneAst as one} from "./Ast";
+import {LangFileSchema} from "../Generator/LangFileSchema";
 
 export class AstHelper {
     static replaceProperties<T>(dest, src: T, keep = ["nodeData", "leadingTrivia"]): T {
@@ -21,13 +21,13 @@ export class AstHelper {
     }
 
     static toJson(obj: any) {
-        const json = JSON.stringify(obj, (k,v) => {
+        const json = JSON.stringify(obj, (k, v) => {
             if (k.endsWith("Ref")) {
                 if (!v.metaPath) {
                     //console.log("Clone is not possible as metaPath is missing!");
                 }
 
-                return { metaPath: v.metaPath, name: v.name };
+                return {metaPath: v.metaPath, name: v.name};
             } else {
                 return v;
             }
@@ -38,7 +38,7 @@ export class AstHelper {
 
     static clone<T>(src: T): T {
         const json = AstHelper.toJson(src);
-        const clone = <T>JSON.parse(json, (k,v) => {
+        const clone = <T>JSON.parse(json, (k, v) => {
             const type = v && v.$objType;
             if (type === "Type") {
                 return one.Type.Load(v);
@@ -47,7 +47,7 @@ export class AstHelper {
             }
             return v;
         });
-        
+
         return clone;
     }
 
@@ -70,9 +70,9 @@ export class AstHelper {
 
     static getModifiedExpr(expr: one.Expression) {
         if (expr.exprKind === "Unary")
-            return (<one.UnaryExpression> expr).operand;
+            return (<one.UnaryExpression>expr).operand;
         else if (expr.exprKind === "Binary") {
-            const binaryExpr = <one.BinaryExpression> expr;
+            const binaryExpr = <one.BinaryExpression>expr;
             if (AstHelper.isBinaryOpModifies(binaryExpr))
                 return binaryExpr.left;
         }

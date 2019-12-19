@@ -1,12 +1,14 @@
-import * as one from "../../StdLib/one";
-import { deindent } from "../../Generator/Utils";
+import * as one from "../../One/one";
+import {deindent} from "../../Utils/Helpers";
 
 export class Cursor {
-    constructor(public offset: number, public line: number, public column: number, public lineStart: number, public lineEnd: number) { }
+    constructor(public offset: number, public line: number, public column: number, public lineStart: number, public lineEnd: number) {
+    }
 }
 
 export class ParseError {
-    constructor(public message: string, public cursor: Cursor = null, public reader: Reader = null) { }
+    constructor(public message: string, public cursor: Cursor = null, public reader: Reader = null) {
+    }
 }
 
 export class Reader {
@@ -34,13 +36,13 @@ export class Reader {
         this.cursorSearch = new CursorPositionSearch(input);
     }
 
-    clone() {
-        return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
+    get eof() {
+        return this.offset >= this.input.length;
     }
 
-    get eof() { return this.offset >= this.input.length; }
-
-    get cursor() { return this.cursorSearch.getCursorForOffset(this.offset); }
+    get cursor() {
+        return this.cursorSearch.getCursorForOffset(this.offset);
+    }
 
     get linePreview() {
         const cursor = this.cursor;
@@ -53,6 +55,10 @@ export class Reader {
         if (preview.length === 20)
             preview += "...";
         return preview;
+    }
+
+    clone() {
+        return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
     }
 
     fail(message: string) {
@@ -68,7 +74,7 @@ export class Reader {
     skipWhitespace(includeInTrivia = false) {
         for (; this.offset < this.input.length; this.offset++) {
             const c = this.input[this.offset];
-            
+
             if (c === '\n')
                 this.wsLineCounter++;
 
@@ -91,7 +97,7 @@ export class Reader {
     }
 
     skipLine() {
-        if(!this.skipUntil("\n"))
+        if (!this.skipUntil("\n"))
             this.offset = this.input.length;
     }
 

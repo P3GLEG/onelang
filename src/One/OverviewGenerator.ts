@@ -1,6 +1,6 @@
-import { OneAst as one } from "./Ast";
-import { AstVisitor } from "./AstVisitor";
-import { SchemaContext } from "./SchemaContext";
+import {OneAst as one} from "./Ast";
+import {AstVisitor} from "./AstVisitor";
+import {SchemaContext} from "./SchemaContext";
 
 export class OverviewGenerator extends AstVisitor<void> {
     result = "";
@@ -28,7 +28,7 @@ export class OverviewGenerator extends AstVisitor<void> {
         this.result += data;
     }
 
-    indent(num: -1|1) {
+    indent(num: -1 | 1) {
         if (num === 1)
             this.pad += "  ";
         else
@@ -41,10 +41,6 @@ export class OverviewGenerator extends AstVisitor<void> {
         this.lastLineWasNewLine = true;
     }
 
-    protected visitVariable(stmt: one.VariableBase) {
-        this.addLine(`- Variable: ${stmt.name}${stmt.type ? ` [${stmt.type.repr()}]` : ""}`);
-    }
-
     visitStatement(statement: one.Statement) {
         const addHdr = (line: string) => {
             this.addLine(line);
@@ -54,11 +50,11 @@ export class OverviewGenerator extends AstVisitor<void> {
             this.addLine(`Comment: "${statement.leadingTrivia.replace(/\n/g, "\\n")}"`);
             this.add("- ");
         }
-    
+
         if (statement === null) {
             addHdr("<null>");
         } else if (statement.stmtType === one.StatementType.If) {
-            const stmt = <one.IfStatement> statement;
+            const stmt = <one.IfStatement>statement;
             addHdr(`If`);
             this.visitExpression(stmt.condition);
             this.indent(1);
@@ -70,11 +66,11 @@ export class OverviewGenerator extends AstVisitor<void> {
             }
             this.indent(-1);
         } else if (statement.stmtType === one.StatementType.VariableDeclaration) {
-            const stmt = <one.VariableDeclaration> statement;
+            const stmt = <one.VariableDeclaration>statement;
             addHdr(`Variable: ${stmt.name}${stmt.type ? ` [${stmt.type.repr()}]` : ""}`);
             this.visitExpression(stmt.initializer);
         } else if (statement.stmtType === one.StatementType.While) {
-            const stmt = <one.WhileStatement> statement;
+            const stmt = <one.WhileStatement>statement;
             addHdr(`While`);
             this.indent(1);
             this.visitExpression(stmt.condition);
@@ -82,7 +78,7 @@ export class OverviewGenerator extends AstVisitor<void> {
             this.visitBlock(stmt.body);
             this.indent(-1);
         } else if (statement.stmtType === one.StatementType.Foreach) {
-            const stmt = <one.ForeachStatement> statement;
+            const stmt = <one.ForeachStatement>statement;
             addHdr(`Foreach ${stmt.itemVariable.name}: ${stmt.itemVariable.type && stmt.itemVariable.type.repr()}`);
             this.indent(1);
             this.addLine(`Items`);
@@ -91,7 +87,7 @@ export class OverviewGenerator extends AstVisitor<void> {
             this.visitBlock(stmt.body);
             this.indent(-1);
         } else if (statement.stmtType === one.StatementType.For) {
-            const stmt = <one.ForStatement> statement;
+            const stmt = <one.ForStatement>statement;
             addHdr(`For ("${stmt.itemVariable.name}")`);
             this.indent(1);
             this.addLine(`Var`);
@@ -109,7 +105,7 @@ export class OverviewGenerator extends AstVisitor<void> {
         } else if (statement.stmtType === one.StatementType.Break) {
             addHdr(`Break`);
         } else if (statement.stmtType === one.StatementType.Unset) {
-            const unsetStmt = <one.UnsetStatement> statement;
+            const unsetStmt = <one.UnsetStatement>statement;
             addHdr(`Unset`);
             super.visitExpression(unsetStmt.expression, null);
         } else {
@@ -136,11 +132,11 @@ export class OverviewGenerator extends AstVisitor<void> {
 
     visitExpression(expression: one.Expression) {
         this.indent(1);
-        
+
         this.add("- ");
 
         const addHdr = (line: string, postfix: string = "") => {
-            const typeText = !expression ? " [null]" : 
+            const typeText = !expression ? " [null]" :
                 expression.valueType ? ` [${expression.valueType.repr()}]` : "";
             this.addLine(`${line}${typeText}${postfix}`);
         };
@@ -148,38 +144,38 @@ export class OverviewGenerator extends AstVisitor<void> {
         if (expression === null) {
             addHdr("<null>");
         } else if (expression.exprKind === one.ExpressionKind.Binary) {
-            const expr = <one.BinaryExpression> expression;
+            const expr = <one.BinaryExpression>expression;
             addHdr(`Binary: ${expr.operator}`);
             super.visitExpression(expression, null);
         } else if (expression.exprKind === one.ExpressionKind.Identifier) {
-            const expr = <one.Identifier> expression;
+            const expr = <one.Identifier>expression;
             addHdr(`Identifier: ${expr.text}`);
         } else if (expression.exprKind === one.ExpressionKind.Literal) {
-            const expr = <one.Literal> expression;
+            const expr = <one.Literal>expression;
             addHdr(`Literal (${expr.literalType}): ${JSON.stringify(expr.value)}`);
         } else if (expression.exprKind === one.ExpressionKind.Unary) {
-            const expr = <one.UnaryExpression> expression;
+            const expr = <one.UnaryExpression>expression;
             addHdr(`Unary (${expr.unaryType}): ${expr.operator}`);
             super.visitExpression(expression, null);
         } else if (expression.exprKind === one.ExpressionKind.PropertyAccess) {
-            const expr = <one.PropertyAccessExpression> expression;
+            const expr = <one.PropertyAccessExpression>expression;
             addHdr(`PropertyAccess (.${expr.propertyName})`);
             super.visitExpression(expression, null);
         } else if (expression.exprKind === one.ExpressionKind.ClassReference) {
-            const expr = <one.ClassReference> expression;
+            const expr = <one.ClassReference>expression;
             addHdr(`ClassReference`);
         } else if (expression.exprKind === one.ExpressionKind.VariableReference) {
-            const expr = <one.VariableRef> expression;
+            const expr = <one.VariableRef>expression;
             const instanceField = expr.varType === one.VariableRefType.InstanceField;
-            const specType = !instanceField ? null : !expr.thisExpr ? "static" : 
+            const specType = !instanceField ? null : !expr.thisExpr ? "static" :
                 expr.thisExpr.exprKind === one.ExpressionKind.ThisReference ? "this" : null;
 
             addHdr(`${expr.varType}${specType ? ` (${specType})` : ""}: ${expr.varRef.name}`, this.showRefs ? ` => ${expr.varRef.metaPath}` : "");
             if (!specType && expr.thisExpr)
                 this.visitExpression(expr.thisExpr);
         } else if (expression.exprKind === one.ExpressionKind.MethodReference) {
-            const expr = <one.MethodReference> expression;
-            const specType = !expr.thisExpr ? "static" : 
+            const expr = <one.MethodReference>expression;
+            const specType = !expr.thisExpr ? "static" :
                 expr.thisExpr.exprKind === one.ExpressionKind.ThisReference ? "this" : null;
 
             const throws = expr.methodRef && expr.methodRef.throws;
@@ -189,19 +185,19 @@ export class OverviewGenerator extends AstVisitor<void> {
             if (!specType)
                 this.visitExpression(expr.thisExpr);
         } else if (expression.exprKind === one.ExpressionKind.ThisReference) {
-            const expr = <one.ThisReference> expression;
+            const expr = <one.ThisReference>expression;
             addHdr(`ThisRef`);
         } else if (expression.exprKind === one.ExpressionKind.New) {
-            const expr = <one.NewExpression> expression;
-            const className = (<one.Identifier> expr.cls).text || (<one.ClassReference> expr.cls).classRef.name;
+            const expr = <one.NewExpression>expression;
+            const className = (<one.Identifier>expr.cls).text || (<one.ClassReference>expr.cls).classRef.name;
             const typeArgsText = expr.typeArguments && expr.typeArguments.length > 0 ? `<${expr.typeArguments.join(", ")}>` : "";
             addHdr(`New ${className}${typeArgsText}`);
         } else if (expression.exprKind === one.ExpressionKind.Cast) {
-            const expr = <one.CastExpression> expression;
+            const expr = <one.CastExpression>expression;
             addHdr(`Cast -> ${expr.newType.repr()}`);
             super.visitExpression(expr.expression, null);
         } else if (expression.exprKind === one.ExpressionKind.MapLiteral) {
-            const expr = <one.MapLiteral> expression;
+            const expr = <one.MapLiteral>expression;
             addHdr(expression.exprKind);
             this.indent(1);
             super.visitExpression(expression, null);
@@ -215,7 +211,7 @@ export class OverviewGenerator extends AstVisitor<void> {
     }
 
     printProperties(intf: one.Interface) {
-        for (const prop of Object.values(intf.properties||{})) {
+        for (const prop of Object.values(intf.properties || {})) {
             this.addLine(`${intf.name}::${prop.name}: ${prop.type && prop.type.repr() || "null"}`);
             this.visitBlock(prop.getter);
         }
@@ -228,11 +224,11 @@ export class OverviewGenerator extends AstVisitor<void> {
             const addInfo = [method.static ? "static" : null, method.throws ? "throws" : null].filter(x => x);
 
             this.addLine(`${cls.name}::${method.name}(${argList}): ${method.returns ? method.returns.repr() : "???"}`
-                +`${addInfo.length > 0 ? ` [${addInfo.join(", ")}]` : ""}`);
+                + `${addInfo.length > 0 ? ` [${addInfo.join(", ")}]` : ""}`);
 
             if (method.body)
                 this.visitBlock(method.body);
-            else if(showEmptyBody)
+            else if (showEmptyBody)
                 this.addLine("  <no body>");
             this.newLine();
         }
@@ -255,7 +251,7 @@ export class OverviewGenerator extends AstVisitor<void> {
             this.printProperties(intf);
             this.printMethods(intf, false);
         }
-                
+
         for (const cls of Object.values(schemaCtx.schema.classes)) {
             for (const field of Object.values(cls.fields)) {
                 this.addLine(`${cls.name}::${field.name}: ${field.type && field.type.repr() || "null"}`);
@@ -283,5 +279,9 @@ export class OverviewGenerator extends AstVisitor<void> {
         }
 
         return this.result;
+    }
+
+    protected visitVariable(stmt: one.VariableBase) {
+        this.addLine(`- Variable: ${stmt.name}${stmt.type ? ` [${stmt.type.repr()}]` : ""}`);
     }
 }

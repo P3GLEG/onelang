@@ -1,5 +1,5 @@
-import { OneAst as one } from "../Ast";
-import { AstTransformer } from "../AstTransformer";
+import {OneAst as one} from "../Ast";
+import {AstTransformer} from "../AstTransformer";
 
 export class RemoveEmptyTemplateStringLiterals extends AstTransformer<void> {
     protected visitTemplateString(expr: one.TemplateString) {

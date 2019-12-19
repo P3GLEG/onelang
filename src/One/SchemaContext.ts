@@ -1,7 +1,6 @@
-import { SchemaTransformer } from "./SchemaTransformer";
-import { OneAst as one } from "./Ast";
-import { Context as TiContext } from "./Transforms/ResolveIdentifiersTransform";
-import { LangFileSchema } from "../Generator/LangFileSchema";
+import {SchemaTransformer} from "./SchemaTransformer";
+import {OneAst as one} from "./Ast";
+import {Context as TiContext} from "./Transforms/ResolveIdentifiersTransform";
 
 export class SchemaContext {
     arrayType: string;
@@ -11,7 +10,7 @@ export class SchemaContext {
     stdlib: SchemaContext;
     overlay: SchemaContext;
 
-    constructor(public schema: one.Schema, public schemaType: "program"|"overlay"|"stdlib") {
+    constructor(public schema: one.Schema, public schemaType: "program" | "overlay" | "stdlib") {
         this.transformer = SchemaTransformer.instance;
     }
 
@@ -34,7 +33,7 @@ export class SchemaContext {
 
         for (const glob of Object.values(schemaCtx.schema.globals))
             this.tiContext.addLocalVar(glob);
-        
+
         for (const cls of Object.values(schemaCtx.schema.classes)) {
             cls.meta = cls.meta || {};
             cls.meta[schemaCtx.schemaType] = true; // TODO: move this logic to somewhere else?
@@ -43,11 +42,11 @@ export class SchemaContext {
 
     getInterfaces(...rootIntfNames: string[]): one.Interface[] {
         const todo = [...rootIntfNames];
-        const seen: { [intfName: string]: boolean } = { };
+        const seen: { [intfName: string]: boolean } = {};
         for (const item of rootIntfNames)
             seen[item] = true;
         const result: one.Interface[] = [];
-        
+
         while (todo.length > 0) {
             const intfName = todo.shift();
             const intf = this.getClassOrInterface(intfName, intfName !== rootIntfNames[0]);

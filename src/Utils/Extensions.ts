@@ -2,18 +2,26 @@
 // tslint:disable-next-line
 interface Array<T> {
     last(): T;
+
     remove(item: T): void;
+
     sortBy(selector: (item: T) => any): T[];
+
     toDict(keySelector: ((item: T) => string)): { [key: string]: T; };
+
     toDict<T2>(keySelector: ((item: T) => string), valueSelector: ((item: T) => T2)): { [key: string]: T2; };
 }
 
 class ArrayHelper {
-    static flatten<TItem>(arr: TItem[][]): TItem[] { return <TItem[]> [].concat.apply([], arr); }
+    static flatten<TItem>(arr: TItem[][]): TItem[] {
+        return <TItem[]>[].concat.apply([], arr);
+    }
 }
 
 if (!Array.prototype.last) {
-    Array.prototype.last = function () { return this[this.length - 1]; };
+    Array.prototype.last = function () {
+        return this[this.length - 1];
+    };
 }
 
 Array.prototype.toDict = function <T, T2>(keySelector: ((item: T) => string), valueSelector?: ((item: T) => T2)) {
@@ -23,7 +31,7 @@ Array.prototype.toDict = function <T, T2>(keySelector: ((item: T) => string), va
     return result;
 };
 
-Array.prototype.remove = function<T>(item: T) {
+Array.prototype.remove = function <T>(item: T) {
     for (var i = this.length; i--;) {
         if (this[i] === item) {
             this.splice(i, 1);
@@ -31,8 +39,8 @@ Array.prototype.remove = function<T>(item: T) {
     }
 };
 
-Array.prototype.sortBy = function<T>(selector: (item: T) => any): T[] {
-    return this.sort((a,b) => {
+Array.prototype.sortBy = function <T>(selector: (item: T) => any): T[] {
+    return this.sort((a, b) => {
         const aProp = selector(a);
         const bProp = selector(b);
         return aProp < bProp ? -1 : aProp > bProp ? +1 : 0;
@@ -44,16 +52,19 @@ Array.prototype.sortBy = function<T>(selector: (item: T) => any): T[] {
 // tslint:disable-next-line
 interface String {
     ucFirst(): string;
+
     lcFirst(): string;
+
     repeat(count: number): string;
+
     endsWith(searchString: string, position: number): boolean;
 }
 
-String.prototype.ucFirst = function() {
+String.prototype.ucFirst = function () {
     return this.charAt(0).toUpperCase() + this.slice(1);
 };
 
-String.prototype.lcFirst = function() {
+String.prototype.lcFirst = function () {
     return this.charAt(0).toLowerCase() + this.slice(1);
 };
 
@@ -70,7 +81,7 @@ if (!String.prototype.endsWith) {
 }
 
 if (!String.prototype.repeat) {
-    String.prototype.repeat = function(count: number) {
+    String.prototype.repeat = function (count: number) {
         "use strict";
         if (this == null) {
             throw new TypeError("can\"t convert " + this + " to object");
@@ -97,7 +108,7 @@ if (!String.prototype.repeat) {
             throw new RangeError("repeat count must not overflow maximum string size");
         }
         var rpt = "";
-        for (;;) {
+        for (; ;) {
             if ((count & 1) === 1) {
                 rpt += str;
             }
@@ -120,7 +131,7 @@ interface PromiseConstructor {
     delay(timeoutMs: number): Promise<void>;
 }
 
-Promise.delay = function(timeoutMs: number) {
+Promise.delay = function (timeoutMs: number) {
     return new Promise<void>((resolve, reject) => setTimeout(resolve, timeoutMs));
 };
 // #endregion

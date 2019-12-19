@@ -1,10 +1,11 @@
-import { OneAst as one } from "./Ast";
-import { SchemaContext } from "./SchemaContext";
+import {SchemaContext} from "./SchemaContext";
 
 export interface ISchemaTransform {
     name: string;
     dependencies?: string[];
+
     transform(schemaCtx: SchemaContext);
+
     revert?(schemaCtx: SchemaContext);
 }
 
@@ -13,7 +14,8 @@ export class SchemaTransformer {
 
     transformers: { [name: string]: ISchemaTransform } = {};
 
-    constructor() { }
+    constructor() {
+    }
 
     log(data: string) {
         console.log(`[SchemaTransformHandler] ${data}`);
@@ -29,8 +31,8 @@ export class SchemaTransformer {
         if (!schema.meta.transforms) schema.meta.transforms = {};
 
         for (const transformName of transformNames) {
-            if(schema.meta.transforms[transformName]) continue;
-            
+            if (schema.meta.transforms[transformName]) continue;
+
             const transformer = this.transformers[transformName];
             if (!transformer) {
                 this.log(`Transformer "${transformName}" not found!`);

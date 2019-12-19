@@ -1,13 +1,9 @@
-import { OneAst as one } from "../One/Ast";
-import { ExprLangParser } from "./ExprLang/ExprLangParser";
-import { OverviewGenerator } from "../One/OverviewGenerator";
-import { LangFileSchema } from "./LangFileSchema";
-import { deindent } from "./Utils";
-import { SchemaCaseConverter, CaseConverter } from "../One/Transforms/CaseConverter";
-import { IncludesCollector } from "../One/Transforms/IncludesCollector";
-import { TemplateMethod, TemplateGenerator, GeneratedNode } from "./OneTemplate/TemplateGenerator";
-import { VariableContext, VariableSource } from "./ExprLang/ExprLangVM";
-import { timeNow } from "../Utils/NodeUtils";
+import {OneAst as one} from "../One/Ast";
+import {LangFileSchema} from "./LangFileSchema";
+import {SchemaCaseConverter} from "../One/Transforms/CaseConverter";
+import {IncludesCollector} from "../One/Transforms/IncludesCollector";
+import {GeneratedNode, TemplateGenerator, TemplateMethod} from "./OneTemplate/TemplateGenerator";
+import {VariableContext, VariableSource} from "./ExprLang/ExprLangVM";
 
 namespace CodeGeneratorModel {
     export interface MethodParameter {
@@ -18,7 +14,7 @@ namespace CodeGeneratorModel {
     }
 
     export interface Method {
-        visibility: "public"|"protected"|"private";
+        visibility: "public" | "protected" | "private";
         name: string;
         parameters: MethodParameter[];
         returnType: string;
@@ -28,7 +24,7 @@ namespace CodeGeneratorModel {
     }
 
     export interface Constructor {
-        visibility: "public"|"protected"|"private";
+        visibility: "public" | "protected" | "private";
         parameters: MethodParameter[];
         body: one.Block;
         throws: boolean;
@@ -55,7 +51,8 @@ namespace CodeGeneratorModel {
 }
 
 class TempVariable {
-    constructor(public name: string, public code: GeneratedNode[]) { }
+    constructor(public name: string, public code: GeneratedNode[]) {
+    }
 }
 
 class TempVarHandler {
@@ -64,8 +61,13 @@ class TempVarHandler {
     stack: string[] = [];
     nextIndex = 0;
 
-    get empty() { return this.variables.length === 0; }
-    get current() { return this.stack.last(); }
+    get empty() {
+        return this.variables.length === 0;
+    }
+
+    get current() {
+        return this.stack.last();
+    }
 
     create() {
         const name = `${this.prefix}${this.nextIndex++}`;
@@ -89,18 +91,23 @@ class TempVarHandler {
 
 class CodeGeneratorModel {
     tempVarHandler = new TempVarHandler();
-    // temporary variable's name
-    get result() { return this.tempVarHandler.current; }
-
     includes: { name: string, source: string }[] = [];
     classes: CodeGeneratorModel.Class[] = [];
     interfaces: CodeGeneratorModel.Interface[] = [];
     enums: CodeGeneratorModel.Enum[] = [];
-    config = { genMeta: false };
+    config = {genMeta: false};
 
-    constructor(public generator: CodeGenerator) { }
+    constructor(public generator: CodeGenerator) {
+    }
 
-    log(data: string) { console.log(`[CodeGeneratorModel] ${data}`); }
+    // temporary variable's name
+    get result() {
+        return this.tempVarHandler.current;
+    }
+
+    log(data: string) {
+        console.log(`[CodeGeneratorModel] ${data}`);
+    }
 
     typeName(type: one.Type) {
         const cls = this.generator.lang.classes[type.className];
@@ -114,8 +121,8 @@ class CodeGeneratorModel {
     }
 
     getOverlayCallCode(callExpr: one.CallExpression, extraArgs?: { [name: string]: any }) {
-        const methodRef = <one.MethodReference> callExpr.method;
-        
+        const methodRef = <one.MethodReference>callExpr.method;
+
         // TODO: I should either use metaPath or methodRef/classRef everywhere, but not hacks like this
         let metaPath = methodRef.methodRef.metaPath;
         if (!metaPath) {
@@ -162,7 +169,7 @@ class CodeGeneratorModel {
         return code;
     }
 
-    escapeQuotes(obj: GeneratedNode[]|string) { 
+    escapeQuotes(obj: GeneratedNode[] | string) {
         if (typeof obj === "string") {
             return obj.replace(/"/g, '\\"');
         } else {
@@ -172,18 +179,18 @@ class CodeGeneratorModel {
         }
     }
 
-    gen(obj: one.Statement|one.Expression, ...genArgs: any[]): GeneratedNode[] {
-        const objExpr = (<one.Expression> obj);
+    gen(obj: one.Statement | one.Expression, ...genArgs: any[]): GeneratedNode[] {
+        const objExpr = (<one.Expression>obj);
         const type = (<one.Statement>obj).stmtType || objExpr.exprKind;
         const isStatement = !!(<one.Statement>obj).stmtType;
-        
+
         if (type === one.ExpressionKind.Call) {
-            const callExpr = <one.CallExpression> obj;
+            const callExpr = <one.CallExpression>obj;
             const overlayCallCode = this.getOverlayCallCode(callExpr);
             if (overlayCallCode)
                 return overlayCallCode;
 
-            const methodRef = <one.MethodReference> callExpr.method;
+            const methodRef = <one.MethodReference>callExpr.method;
             const methodArgs = methodRef.methodRef.parameters;
             if (!methodArgs)
                 throw new Error(`Method implementation is not found: ${methodRef.methodRef.metaPath} for ${this.generator.lang.extension}`);
@@ -195,9 +202,9 @@ class CodeGeneratorModel {
             for (let i = 0; i < methodArgs.length; i++)
                 callExpr.arguments[i].paramName = methodArgs[i].outName;
         } else if (type === one.ExpressionKind.New) {
-            const callExpr = <one.NewExpression> obj;
+            const callExpr = <one.NewExpression>obj;
 
-            const cls = <one.ClassReference> callExpr.cls;
+            const cls = <one.ClassReference>callExpr.cls;
             const methodRef = cls.classRef.constructor;
             const methodArgs = methodRef ? methodRef.parameters : [];
             if (!methodArgs)
@@ -210,7 +217,7 @@ class CodeGeneratorModel {
             for (let i = 0; i < methodArgs.length; i++)
                 callExpr.arguments[i].paramName = methodArgs[i].outName;
         } else if (type === one.ExpressionKind.VariableReference) {
-            const varRef = <one.VariableRef> obj;
+            const varRef = <one.VariableRef>obj;
             if (varRef.varType === one.VariableRefType.InstanceField) {
                 const className = varRef.thisExpr.valueType.className;
                 const fieldName = varRef.varRef.name;
@@ -230,7 +237,7 @@ class CodeGeneratorModel {
 
         let genName = type.toString().lcFirst();
         if (type === one.ExpressionKind.Literal) {
-            const literalExpr = <one.Literal> obj;
+            const literalExpr = <one.Literal>obj;
             if (literalExpr.literalType === "boolean") {
                 genName = `${literalExpr.value ? "true" : "false"}Literal`;
             } else {
@@ -242,18 +249,18 @@ class CodeGeneratorModel {
                 }
             }
         } else if (type === one.ExpressionKind.VariableReference) {
-            const varRef = <one.VariableRef> obj;
+            const varRef = <one.VariableRef>obj;
             genName = varRef.varType.lcFirst();
         } else if (type === one.ExpressionKind.MethodReference) {
-            const methodRef = <one.MethodReference> obj;
+            const methodRef = <one.MethodReference>obj;
             genName = methodRef.thisExpr ? "instanceMethod" : "staticMethod";
         } else if (type === one.ExpressionKind.Unary) {
-            const unaryExpr = <one.UnaryExpression> obj;
+            const unaryExpr = <one.UnaryExpression>obj;
             const unaryName = unaryExpr.unaryType;
             const fullName = `${unaryName}${unaryExpr.operator}`;
             genName = this.generator.lang.expressions[fullName] ? fullName : unaryName;
         } else if (type === one.ExpressionKind.Binary) {
-            const binaryExpr = <one.BinaryExpression> obj;
+            const binaryExpr = <one.BinaryExpression>obj;
             const leftType = binaryExpr.left.valueType.repr();
             const rightType = binaryExpr.right.valueType.repr();
             const ops = this.generator.lang.operators;
@@ -268,13 +275,13 @@ class CodeGeneratorModel {
             if (this.generator.lang.expressions[fullName])
                 genName = fullName;
         } else if (type === one.StatementType.VariableDeclaration) {
-            const varDecl = <one.VariableDeclaration> obj;
+            const varDecl = <one.VariableDeclaration>obj;
             const initType = varDecl.initializer.exprKind;
             if (initType === one.ExpressionKind.MapLiteral
-                    && this.generator.lang.expressions["mapLiteralDeclaration"])
+                && this.generator.lang.expressions["mapLiteralDeclaration"])
                 genName = "mapLiteralDeclaration";
             else if (initType === one.ExpressionKind.Call) {
-                const overlayCall = this.getOverlayCallCode(<one.CallExpression> varDecl.initializer, { result: varDecl.outName });
+                const overlayCall = this.getOverlayCallCode(<one.CallExpression>varDecl.initializer, {result: varDecl.outName});
                 if (overlayCall)
                     return overlayCall;
             }
@@ -290,7 +297,7 @@ class CodeGeneratorModel {
 
         // TODO (hack): using global "result" and "resultType" variables
         const usingResult = exprTmpl.template.includes("{{result}}");
-        
+
         if (usingResult)
             this.tempVarHandler.create();
 
@@ -360,7 +367,7 @@ export class CodeGenerator {
             this.templateVars.setVariable(name, this.lang.templates[name].generator);
         const varContext = new VariableContext([codeGenVars, this.templateVars]);
         this.templateGenerator = new TemplateGenerator(varContext);
-        this.templateGenerator.objectHook = obj => this.model.gen(<any> obj);
+        this.templateGenerator.objectHook = obj => this.model.gen(<any>obj);
     }
 
     call(method: TemplateMethod, args: any[]) {
@@ -393,7 +400,7 @@ export class CodeGenerator {
         }
     }
 
-    convertIdentifier(name: string, vars: string[], mode: "variable"|"field"|"declaration") {
+    convertIdentifier(name: string, vars: string[], mode: "variable" | "field" | "declaration") {
         const isLocalVar = vars.includes(name);
         const knownKeyword = ["true", "false"].includes(name);
         return `${isLocalVar || mode === "declaration" || mode === "field" || knownKeyword ? "" : "this."}${name}`;
@@ -404,11 +411,11 @@ export class CodeGenerator {
         let currExpr = method;
         while (true) {
             if (currExpr.exprKind === one.ExpressionKind.PropertyAccess) {
-                const propAcc = <one.PropertyAccessExpression> currExpr;
+                const propAcc = <one.PropertyAccessExpression>currExpr;
                 parts.push(propAcc.propertyName);
                 currExpr = propAcc.object;
             } else if (currExpr.exprKind === one.ExpressionKind.Identifier) {
-                parts.push((<one.Identifier> currExpr).text);
+                parts.push((<one.Identifier>currExpr).text);
                 break;
             } else
                 return null;
@@ -418,8 +425,8 @@ export class CodeGenerator {
         return funcName;
     }
 
-    genParameters(method: one.Method|one.Constructor) {
-        return method.parameters.map((param, idx) => <CodeGeneratorModel.MethodParameter> {
+    genParameters(method: one.Method | one.Constructor) {
+        return method.parameters.map((param, idx) => <CodeGeneratorModel.MethodParameter>{
             idx,
             name: param.outName,
             type: this.getTypeName(param.type),
@@ -430,20 +437,23 @@ export class CodeGenerator {
     setupIncludes() {
         const includesCollector = new IncludesCollector(this.lang);
         includesCollector.process(this.schema);
-        this.model.includes = Array.from(includesCollector.includes).map(name => ({ name, source: this.lang.includeSources[name] || name })).sortBy(x => x.name);
+        this.model.includes = Array.from(includesCollector.includes).map(name => ({
+            name,
+            source: this.lang.includeSources[name] || name
+        })).sortBy(x => x.name);
     }
 
     setupEnums() {
         this.model.enums = Object.values(this.schema.enums).map(enum_ => {
-            return <CodeGeneratorModel.Enum> {
+            return <CodeGeneratorModel.Enum>{
                 name: enum_.outName,
-                values: enum_.values.map((x, i) => ({ name: x.outName, intValue: i, origName: x.name }))
+                values: enum_.values.map((x, i) => ({name: x.outName, intValue: i, origName: x.name}))
             }
         });
     }
 
     convertMethod(method: one.Method) {
-        return <CodeGeneratorModel.Method> {
+        return <CodeGeneratorModel.Method>{
             name: method.outName,
             returnType: this.getTypeName(method.returns),
             returnTypeInfo: method.returns,
@@ -459,7 +469,7 @@ export class CodeGenerator {
     setupClasses() {
         this.model.interfaces = Object.values(this.schema.interfaces).map(intf => {
             const methods = Object.values(intf.methods).map(method => this.convertMethod(method));
-            return <CodeGeneratorModel.Interface> {
+            return <CodeGeneratorModel.Interface>{
                 name: intf.outName,
                 methods: methods,
                 typeArguments: intf.typeArguments && intf.typeArguments.length > 0 ? intf.typeArguments : null,
@@ -472,17 +482,17 @@ export class CodeGenerator {
         this.model.classes = Object.values(this.schema.classes).map(cls => {
             const methods = Object.values(cls.methods).map(method => this.convertMethod(method));
 
-            const constructor = cls.constructor ? <CodeGeneratorModel.Constructor> {
+            const constructor = cls.constructor ? <CodeGeneratorModel.Constructor>{
                 body: cls.constructor.body,
                 parameters: this.genParameters(cls.constructor),
                 throws: cls.constructor.throws || false
             } : null;
-            
+
             const fields = Object.values(cls.fields).map(field => {
                 return {
                     name: this.caseConverter.getName(field.outName, "field"),
                     type: this.getTypeName(field.type),
-                    typeInfo: field.type,                    
+                    typeInfo: field.type,
                     visibility: field.visibility || "public",
                     public: field.visibility ? field.visibility === "public" : true,
                     initializer: field.initializer,
@@ -490,7 +500,7 @@ export class CodeGenerator {
                 }
             });
 
-            return <CodeGeneratorModel.Class> {
+            return <CodeGeneratorModel.Class>{
                 name: cls.outName,
                 methods: methods,
                 constructor,
@@ -518,12 +528,12 @@ export class CodeGenerator {
     generate(callTestMethod: boolean) {
         const generatedNodes = this.call(this.lang.templates["main"].generator, []);
         this.generatedCode = "";
-        for (const tmplNode of generatedNodes||[]) {
+        for (const tmplNode of generatedNodes || []) {
             if (tmplNode.astNode && tmplNode.astNode.nodeData) {
                 const nodeData = tmplNode.astNode.nodeData;
                 let dstRange = nodeData.destRanges[this.lang.name];
                 if (!dstRange)
-                    dstRange = nodeData.destRanges[this.lang.name] = { start: this.generatedCode.length, end: -1 };
+                    dstRange = nodeData.destRanges[this.lang.name] = {start: this.generatedCode.length, end: -1};
                 dstRange.end = this.generatedCode.length + tmplNode.text.length;
             }
             this.generatedCode += tmplNode.text;

@@ -1,5 +1,5 @@
-import { OneAst as ast } from "../../One/Ast";
-import { Reader } from "./Reader";
+import {OneAst as ast} from "../../One/Ast";
+import {Reader} from "./Reader";
 
 export class NodeManager {
     nodes: ast.INode[] = [];
@@ -8,7 +8,7 @@ export class NodeManager {
     }
 
     addNode(node: ast.INode, start: number) {
-        node.nodeData = { sourceRange: { start, end: this.reader.wsOffset }, destRanges: {} };
+        node.nodeData = {sourceRange: {start, end: this.reader.wsOffset}, destRanges: {}};
         this.nodes.push(node);
     }
 

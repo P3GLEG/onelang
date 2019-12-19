@@ -1,10 +1,15 @@
-import { AstVisitor } from "../AstVisitor";
-import { ISchemaTransform } from "../SchemaTransformer";
-import { OneAst as one } from "../Ast";
-import { SchemaContext } from "../SchemaContext";
+import {AstVisitor} from "../AstVisitor";
+import {ISchemaTransform} from "../SchemaTransformer";
+import {OneAst as one} from "../Ast";
+import {SchemaContext} from "../SchemaContext";
 
 export class FillParentTransform extends AstVisitor<any> implements ISchemaTransform {
     name: string = "fillParent";
+
+    transform(schemaCtx: SchemaContext) {
+        const schema = schemaCtx.schema;
+        this.visitSchema(schema, schema);
+    }
 
     protected visitExpression(expression: one.Expression, parent: any) {
         expression.parentRef = parent;
@@ -21,17 +26,17 @@ export class FillParentTransform extends AstVisitor<any> implements ISchemaTrans
         super.visitBlock(block, block);
     }
 
-    protected visitMethodLike(method: one.Method|one.Constructor, parent: any) { 
+    protected visitMethodLike(method: one.Method | one.Constructor, parent: any) {
         method.classRef = parent;
         super.visitMethodLike(method, method);
     }
 
-    protected visitField(field: one.Field, parent: any) { 
+    protected visitField(field: one.Field, parent: any) {
         field.classRef = parent;
         super.visitField(field, parent);
     }
 
-    protected visitProperty(prop: one.Property, parent: any) { 
+    protected visitProperty(prop: one.Property, parent: any) {
         prop.classRef = parent;
         super.visitProperty(prop, parent);
     }
@@ -40,14 +45,9 @@ export class FillParentTransform extends AstVisitor<any> implements ISchemaTrans
         intf.schemaRef = parent;
         super.visitInterface(intf, intf);
     }
-    
+
     protected visitClass(cls: one.Class, parent: any) {
         cls.schemaRef = parent;
         super.visitClass(cls, cls);
-    }
-    
-    transform(schemaCtx: SchemaContext) {
-        const schema = schemaCtx.schema;
-        this.visitSchema(schema, schema);
     }
 }

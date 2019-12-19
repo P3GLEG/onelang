@@ -1,4 +1,3 @@
-
 export function readFile(fn: string): string {
     const fs = require("fs");
     return fs.readFileSync(fn, "utf8");
@@ -16,7 +15,7 @@ export function writeFile(fn: string, data: any) {
 export function jsonRequest<T>(url: string, body: any): Promise<T> {
     return new Promise<T>((resolve, reject) => {
         const request = require('request');
-        request({ url, method: "POST", json: true, body }, function(error, response, body: T) {
+        request({url, method: "POST", json: true, body}, function (error, response, body: T) {
             if (error)
                 reject(error);
             else
@@ -26,6 +25,7 @@ export function jsonRequest<T>(url: string, body: any): Promise<T> {
 }
 
 const process = require("process");
+
 export function timeNow() {
     const time = process.hrtime();
     return time[0] * 1000 + Math.round(time[1] / 1000 / 1000);

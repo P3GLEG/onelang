@@ -1,10 +1,7 @@
-import { OneAst as one } from "../Ast";
-import { AstVisitor } from "../AstVisitor";
-import { VariableContext } from "../VariableContext";
-import { SchemaContext } from "../SchemaContext";
-import { ISchemaTransform } from "../SchemaTransformer";
-import { AstHelper } from "../AstHelper";
-import { AstTransformer } from "../AstTransformer";
+import {OneAst as one} from "../Ast";
+import {SchemaContext} from "../SchemaContext";
+import {AstHelper} from "../AstHelper";
+import {AstTransformer} from "../AstTransformer";
 
 export enum ReferenceType { Class, Method, MethodVariable, ClassVariable }
 
@@ -16,12 +13,15 @@ export class Reference {
 }
 
 export class GenericsMapping {
-    constructor(public map: { [genericName: string]: one.Type }) { }
+    constructor(public map: { [genericName: string]: one.Type }) {
+    }
 
-    static log(data: string) { console.log(`[GenericsMapping] ${data}`); }
+    static log(data: string) {
+        console.log(`[GenericsMapping] ${data}`);
+    }
 
     static create(cls: one.Interface, realClassType: one.Type) {
-        if (cls.typeArguments.length !== (realClassType.typeArguments||[]).length) {
+        if (cls.typeArguments.length !== (realClassType.typeArguments || []).length) {
             this.log(`Type argument count mismatch! '${cls.type.repr()}' <=> '${realClassType.repr()}'`);
             return null;
         }
@@ -53,7 +53,13 @@ export class GenericsMapping {
 export class InferTypesTransform extends AstTransformer<void> {
     methodReturnTypes: one.Type[] = [];
 
-    constructor(public schemaCtx: SchemaContext) { super(); }
+    constructor(public schemaCtx: SchemaContext) {
+        super();
+    }
+
+    transform() {
+        this.visitSchema(this.schemaCtx.schema, null);
+    }
 
     protected visitType(type: one.Type) {
         super.visitType(type, null);
@@ -71,7 +77,7 @@ export class InferTypesTransform extends AstTransformer<void> {
         super.visitTemplateString(expr, null);
         expr.valueType = one.Type.Class("OneString");
     }
-    
+
     protected syncTypes(type1: one.Type, type2: one.Type) {
         if (!type1 || type1.isAny || type1.isGenerics) return type2;
         if (!type2 || type2.isAny || type2.isGenerics) return type1;
@@ -87,7 +93,7 @@ export class InferTypesTransform extends AstTransformer<void> {
             } else {
                 type1.typeKind = type2.typeKind; // class -> interface if needed
                 for (let i = 0; i < type1.typeArguments.length; i++)
-                    type1.typeArguments[i] = type2.typeArguments[i] = 
+                    type1.typeArguments[i] = type2.typeArguments[i] =
                         this.syncTypes(type1.typeArguments[i], type2.typeArguments[i]);
             }
         }
@@ -109,10 +115,10 @@ export class InferTypesTransform extends AstTransformer<void> {
 
     protected visitForeachStatement(stmt: one.ForeachStatement) {
         this.visitExpression(stmt.items);
-        
+
         const itemsType = stmt.items.valueType;
         const itemsClass = this.schemaCtx.getClass(itemsType.className);
-        
+
         if (!itemsClass || !itemsClass.meta.iterable || itemsType.typeArguments.length === 0) {
             console.log(`Tried to use foreach on a non-array type: ${itemsType.repr()}!`);
             stmt.itemVariable.type = one.Type.Any;
@@ -126,14 +132,14 @@ export class InferTypesTransform extends AstTransformer<void> {
     protected visitBinaryExpression(expr: one.BinaryExpression) {
         super.visitBinaryExpression(expr, null);
 
-        // TODO: really big hack... 
+        // TODO: really big hack...
         if (["<=", ">=", "===", "==", "!==", "!="].includes(expr.operator))
             expr.valueType = one.Type.Class("OneBoolean");
         else if (expr.left.valueType.isNumber && expr.right.valueType.isNumber)
             expr.valueType = one.Type.Class("OneNumber");
         else if (expr.left.valueType.isBoolean && expr.right.valueType.isBoolean)
             expr.valueType = one.Type.Class("OneBoolean");
-        else if (expr.left.valueType.isString) 
+        else if (expr.left.valueType.isString)
             expr.valueType = one.Type.Class("OneString");
         else
             expr.valueType = expr.left.valueType; // TODO: also hack...
@@ -141,7 +147,7 @@ export class InferTypesTransform extends AstTransformer<void> {
 
     protected visitConditionalExpression(expr: one.ConditionalExpression) {
         super.visitConditionalExpression(expr, null);
-        
+
         const trueType = expr.whenTrue.valueType;
         const falseType = expr.whenFalse.valueType;
         if (trueType.equals(falseType)) {
@@ -169,13 +175,13 @@ export class InferTypesTransform extends AstTransformer<void> {
     protected visitUnaryExpression(expr: one.UnaryExpression) {
         this.visitExpression(expr.operand);
 
-        if (expr.operand.valueType.isNumber) 
+        if (expr.operand.valueType.isNumber)
             expr.valueType = one.Type.Class("OneNumber");
     }
 
     protected visitElementAccessExpression(expr: one.ElementAccessExpression) {
         super.visitElementAccessExpression(expr, null);
-        
+
         // TODO: use the return type of get() method
         const typeArgs = expr.object.valueType.typeArguments;
         if (typeArgs && typeArgs.length === 1)
@@ -201,7 +207,7 @@ export class InferTypesTransform extends AstTransformer<void> {
 
         expr.valueType = one.Type.Load(method.returns);
 
-        const thisExpr = (<one.MethodReference> expr.method).thisExpr;
+        const thisExpr = (<one.MethodReference>expr.method).thisExpr;
         if (thisExpr) {
             const genMap = GenericsMapping.create(cls, thisExpr.valueType);
             if (genMap)
@@ -263,12 +269,12 @@ export class InferTypesTransform extends AstTransformer<void> {
         if (method) {
             const thisIsStatic = expr.object.exprKind === one.ExpressionKind.ClassReference;
             const thisIsThis = expr.object.exprKind === one.ExpressionKind.ThisReference;
-    
+
             if (method.static && !thisIsStatic)
                 this.log("Tried to call static method via instance reference");
             else if (!method.static && thisIsStatic)
                 this.log("Tried to call non-static method via static reference");
-    
+
             const newValue = new one.MethodReference(method, thisIsStatic ? null : expr.object);
             const newExpr = AstHelper.replaceProperties(expr, newValue);
             newExpr.valueType = one.Type.Method(objType, method.name);
@@ -309,37 +315,37 @@ export class InferTypesTransform extends AstTransformer<void> {
 
     protected visitExpression(expression: one.Expression) {
         super.visitExpression(expression, null);
-        if(!expression.valueType)
+        if (!expression.valueType)
             expression.valueType = one.Type.Any;
     }
 
     protected visitClassReference(expr: one.ClassReference) {
         expr.valueType = expr.classRef.type || expr.valueType;
     }
-    
+
     protected visitEnumReference(expr: one.EnumReference) {
         expr.valueType = expr.enumRef.type || expr.valueType;
     }
-    
+
     protected visitThisReference(expr: one.ThisReference) {
         expr.valueType = this.currentClass.type || expr.valueType;
     }
 
-    protected visitVariableRef(expr: one.VariableRef) { 
+    protected visitVariableRef(expr: one.VariableRef) {
         super.visitVariableRef(expr, null);
         expr.valueType = expr.varRef.type || expr.valueType;
     }
-    
+
     protected visitMethodReference(expr: one.MethodReference) {
         expr.valueType = expr.methodRef.type || expr.valueType;
     }
 
-    protected visitMethod(method: one.Method) { 
+    protected visitMethod(method: one.Method) {
         method.type = one.Type.Method(method.classRef.type, method.name);
         this.methodReturnTypes = [];
         super.visitMethod(method, null);
 
-        // TODO: implement this for > 1        
+        // TODO: implement this for > 1
         if (method.returns.isAny && method.body) {
             const returnTypes = this.methodReturnTypes.filter(x => !x.isAny);
             if (returnTypes.length == 1) {
@@ -348,8 +354,8 @@ export class InferTypesTransform extends AstTransformer<void> {
                 method.returns = one.Type.Void;
             }
         }
-    } 
- 
+    }
+
     protected visitClass(cls: one.Class) {
         cls.type = one.Type.Class(cls.name, cls.typeArguments.map(t => one.Type.Generics(t)));
         super.visitClass(cls, null);
@@ -363,9 +369,5 @@ export class InferTypesTransform extends AstTransformer<void> {
     protected visitEnum(enum_: one.Enum) {
         enum_.type = one.Type.Enum(enum_.name);
         super.visitEnum(enum_, null);
-    }
-
-    transform() {
-        this.visitSchema(this.schemaCtx.schema, null);
     }
 }

@@ -1,13 +1,11 @@
-import { OneAst as one } from "../Ast";
-import { AstVisitor } from "../AstVisitor";
-import { ISchemaTransform } from "../SchemaTransformer";
-import { AstHelper } from "../AstHelper";
-import { LangFileSchema } from "../../Generator/LangFileSchema";
+import {OneAst as one} from "../Ast";
+import {AstVisitor} from "../AstVisitor";
+import {LangFileSchema} from "../../Generator/LangFileSchema";
 
 export class IncludesCollector extends AstVisitor<void> {
     includes: Set<string>;
 
-    constructor(public lang: LangFileSchema.LangFile) { 
+    constructor(public lang: LangFileSchema.LangFile) {
         super();
         this.includes = new Set<string>(lang.includes);
     }
@@ -15,9 +13,13 @@ export class IncludesCollector extends AstVisitor<void> {
     useInclude(className: string, methodName?: string) {
         const cls = this.lang.classes[className];
         if (!cls) return;
-        const includes = cls.includes.concat(cls.methods && methodName ? (cls.methods[methodName] || { includes: [] }).includes : []);
+        const includes = cls.includes.concat(cls.methods && methodName ? (cls.methods[methodName] || {includes: []}).includes : []);
         for (const include of includes)
             this.includes.add(include);
+    }
+
+    process(schema: one.Schema) {
+        this.visitSchema(schema, null);
     }
 
     protected visitExpression(expression: one.Expression) {
@@ -41,7 +43,7 @@ export class IncludesCollector extends AstVisitor<void> {
         for (const include of op.includes)
             this.includes.add(include);
     }
-    
+
     protected visitMethodReference(methodRef: one.MethodReference) {
         super.visitMethodReference(methodRef, null);
         this.useInclude(methodRef.valueType.classType.className, methodRef.valueType.methodName);
@@ -50,9 +52,5 @@ export class IncludesCollector extends AstVisitor<void> {
     protected visitClassReference(classRef: one.ClassReference) {
         super.visitClassReference(classRef, null);
         this.useInclude(classRef.valueType.className);
-    }
-
-    process(schema: one.Schema) {
-        this.visitSchema(schema, null);
     }
 }

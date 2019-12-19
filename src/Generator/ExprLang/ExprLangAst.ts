@@ -1,27 +1,27 @@
 export namespace ExprLangAst {
     export interface Expression {
-        kind: "binary"|"unary"|"literal"|"identifier"|"parenthesized"|"conditional"|"call"|"propertyAccess"|"elementAccess";
+        kind: "binary" | "unary" | "literal" | "identifier" | "parenthesized" | "conditional" | "call" | "propertyAccess" | "elementAccess";
     }
-    
+
     export interface BinaryExpression extends Expression {
         kind: "binary";
-        op: "+"|"-"|"*"|"/"|"<<"|">>";
+        op: "+" | "-" | "*" | "/" | "<<" | ">>";
         left: Expression;
         right: Expression;
     }
-    
+
     export interface UnaryExpression extends Expression {
         kind: "unary";
-        op: "!"|"+"|"-"|"!";
+        op: "!" | "+" | "-" | "!";
         expr: Expression;
     }
-    
+
     export interface LiteralExpression extends Expression {
         kind: "literal";
-        type: "number"|"string"|"boolean";
+        type: "number" | "string" | "boolean";
         value: any;
     }
-    
+
     export interface IdentifierExpression extends Expression {
         kind: "identifier";
         text: string;

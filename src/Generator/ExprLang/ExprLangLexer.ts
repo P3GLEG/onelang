@@ -1,20 +1,24 @@
-export type TokenKind = "number"|"identifier"|"operator"|"string";
+export type TokenKind = "number" | "identifier" | "operator" | "string";
 
-export class Token
-{
-    constructor(public kind: TokenKind, public value: string) { }
+export class Token {
+    constructor(public kind: TokenKind, public value: string) {
+    }
 }
 
 export class ExprLangLexerException {
     errorOffset: number;
 
-    get context() { return this.tokenizer.expression.substr(this.errorOffset, 30) + "..."; }
-
     constructor(public tokenizer: ExprLangLexer, public message: string) {
         this.errorOffset = tokenizer.offset;
     }
 
-    toString() { return `TokenizerException: ${this.message} at '${this.context}' (offset: ${this.errorOffset})`; }
+    get context() {
+        return this.tokenizer.expression.substr(this.errorOffset, 30) + "...";
+    }
+
+    toString() {
+        return `TokenizerException: ${this.message} at '${this.context}' (offset: ${this.errorOffset})`;
+    }
 }
 
 export class ExprLangLexer {
@@ -27,12 +31,16 @@ export class ExprLangLexer {
             this.tryToReadLiteral();
         }
 
-        while(this.hasMoreToken()) {
+        while (this.hasMoreToken()) {
             if (!this.tryToReadOperator())
                 this.fail("expected operator here");
 
             this.tryToReadLiteral();
         }
+    }
+
+    get eof() {
+        return this.offset >= this.expression.length;
     }
 
     hasMoreToken() {
@@ -90,10 +98,8 @@ export class ExprLangLexer {
         return true;
     }
 
-    get eof() { return this.offset >= this.expression.length; }
-
     skipWhitespace() {
-        while(!this.eof) {
+        while (!this.eof) {
             const c = this.expression[this.offset];
             if (c == ' ' || c == '\n' || c == '\t' || c == '\r')
                 this.offset++;
