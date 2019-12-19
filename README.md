@@ -1,3 +1,7 @@
+
+# Modified for command line usage
+`./node_modules/typescript/bin/tsc && node js/app.js`
+
 # TL;DR
  - Live demo on https://ide.onelang.io
  - [Compiler backend documentation on Wiki](https://github.com/koczkatamas/onelang/wiki/Compiler-backend)
