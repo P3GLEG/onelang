@@ -3,6 +3,7 @@ import {deindent} from "../Utils/Helpers";
 
 export interface LangConfig {
     name?: string;
+    yamlFile: string;
     stdlibFn: string;
     request: {
         lang?: string;
@@ -19,6 +20,7 @@ export type LangConfigs = { [name: string]: LangConfig };
 export const langConfigs: LangConfigs = {
     cpp: {
         stdlibFn: "one.hpp",
+        yamlFile: "cpp.yaml",
         request: {
             lang: "CPP",
             code: deindent(`
@@ -41,6 +43,7 @@ export const langConfigs: LangConfigs = {
     },
     csharp: {
         stdlibFn: "one.cs",
+        yamlFile: "csharp.yaml",
         request: {
             lang: "CSharp",
             code: deindent(`
@@ -65,6 +68,7 @@ export const langConfigs: LangConfigs = {
     },
     go: {
         stdlibFn: "one.go",
+        yamlFile: "go.yaml",
         request: {
             lang: "Go",
             code: deindent(`
@@ -87,6 +91,7 @@ export const langConfigs: LangConfigs = {
     },
     java: {
         stdlibFn: "one.java",
+        yamlFile: "java.yaml",
         request: {
             lang: "Java",
             code: deindent(`
@@ -101,6 +106,7 @@ export const langConfigs: LangConfigs = {
     },
     javascript: {
         stdlibFn: "one.js",
+        yamlFile: "javascript.yaml",
         request: {
             lang: "JavaScript",
             code: deindent(`
@@ -117,6 +123,7 @@ export const langConfigs: LangConfigs = {
     },
     perl: {
         stdlibFn: "one.pl",
+        yamlFile: "perl.yaml",
         request: {
             lang: "Perl",
             code: deindent(`
@@ -143,6 +150,7 @@ export const langConfigs: LangConfigs = {
     },
     php: {
         stdlibFn: "one.php",
+        yamlFile: "php.yaml",
         request: {
             lang: "PHP",
             code: deindent(`
@@ -159,6 +167,7 @@ export const langConfigs: LangConfigs = {
     },
     python: {
         stdlibFn: "one.py",
+        yamlFile: "python.yaml",
         request: {
             lang: "Python",
             className: 'TestClass',
@@ -171,6 +180,7 @@ export const langConfigs: LangConfigs = {
     },
     ruby: {
         stdlibFn: "one.rb",
+        yamlFile: "ruby.yaml",
         request: {
             lang: "Ruby",
             className: 'TestClass',
@@ -185,6 +195,7 @@ export const langConfigs: LangConfigs = {
     },
     swift: {
         stdlibFn: "one.swift",
+        yamlFile: "swift.yaml",
         request: {
             lang: "Swift",
             code: deindent(`
@@ -199,6 +210,7 @@ export const langConfigs: LangConfigs = {
     },
     typescript: {
         stdlibFn: "one.ts",
+        yamlFile: "typescript.yaml",
         request: {
             lang: "TypeScript",
             className: 'TestClass',
